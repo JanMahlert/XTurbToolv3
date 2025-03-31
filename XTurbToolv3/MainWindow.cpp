@@ -10,7 +10,7 @@ void MainWindow::create(HINSTANCE hInstance, int nCmdShow) {
 
     if (!hwnd) return; // Exit if main window creation failed
 
-    container = new Container(hwnd, hInstance, 50, 20, 800, 600); // Create container at (50,50), 200x200
+    container = new Container(hwnd, hInstance, 50, 20, 800, 600, L"XTurb-g95-mingw32-cygwin-kirk.exe"); // Create container at (50,50), 200x200
     container->create(hInstance, nCmdShow); // Initialize the container
 }
 

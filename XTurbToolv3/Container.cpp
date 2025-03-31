@@ -5,10 +5,11 @@
 #include "Logger.h"
 #include "HelperFunctions.h"
 #include <algorithm>
+#include <thread>
 #include <fstream>
 
 // Constructor: Initialize with parent window and position/size
-Container::Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height)
+Container::Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height, const std::wstring& xturbExeName)
     : Window(), x(x), y(y), width(width), height(height),
     hFontRegular(nullptr), hFontBold(nullptr), nextControlId((HMENU)1001), currentY(0), totalHeight(0), scrollPos(0),
     nameInput(nullptr), bnInput(nullptr), rootInput(nullptr), ntaperInput(nullptr), rtaperInput(nullptr),
@@ -25,9 +26,27 @@ Container::Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, 
     rpmpresInput(nullptr), pitchpreInput(nullptr), methodInput(nullptr), jxInput(nullptr),
     cosdistrInput(nullptr), gnuplotInput(nullptr), aviscInput(nullptr), rlossInput(nullptr),
     tiplossInput(nullptr), axrelaxInput(nullptr), atrelaxInput(nullptr), optimInput(nullptr),
-    twistGraph(nullptr), chordGraph(nullptr) {
+    twistGraph(nullptr), chordGraph(nullptr), xturbRunner(nullptr), exeDir(L"") 
+{
     this->hInstance = hInstance;
     this->hwnd = parent;
+
+    wchar_t exePath[MAX_PATH];
+    if (GetModuleFileNameW(nullptr, exePath, MAX_PATH) > 0) {
+        std::wstring fullPath = exePath;
+        size_t lastSlash = fullPath.find_last_of(L"\\");
+        if (lastSlash != std::wstring::npos) {
+            exeDir = fullPath.substr(0, lastSlash + 1);
+            Logger::logError(L"exeDir set to: " + exeDir);
+        }
+    }
+    else {
+        Logger::logError(L"Failed to get executable directory!");
+        exeDir = L".";
+    }
+
+    // Initialize XTurbRunner with the provided executable name
+    xturbRunner = new XTurbRunner(exeDir + xturbExeName);
 }
 
 // Destructor: Clean up resources
@@ -46,6 +65,8 @@ Container::~Container() {
     controls.clear();
     delete twistGraph;
     delete chordGraph;
+    delete xturbRunner;
+    xturbRunner = nullptr;
 }
 
 // Generate a unique control ID
@@ -1109,11 +1130,18 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     addLabeledInput(L"Inverse Design Mode (0-3):", optimInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     optimInput->setDefaultText(L"0");
 
-    // Button
+    // Save Button
     Button* button = new Button(hwnd, hInstance, 0, currentY - scrollPos, 100, 30, L"Save", generateControlId());
     addControl(button, 100, 30);
     if (hFontRegular) {
         button->setFont(hFontRegular);
+    }
+
+    // Run XTurb Button
+    Button* runButton = new Button(hwnd, hInstance, 235, currentY - 40 - scrollPos, 100, 30, L"Run XTurb", generateControlId());
+    addControl(runButton, 100, 30);
+    if (hFontRegular) {
+        runButton->setFont(hFontRegular);
     }
 
     // Update scroll range
@@ -1201,6 +1229,18 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         updateScrollRange();
         return 0;
     }
+    case WM_USER + 101: {
+        HWND runButton = (HWND)lParam;
+        EnableWindow(runButton, TRUE); // Re-enable the button
+
+        if (wParam == 1) {
+            MessageBoxW(hwnd, L"XTurb executed successfully.", L"Success", MB_OK | MB_ICONINFORMATION);
+        }
+        else {
+            MessageBoxW(hwnd, L"XTurb execution failed.", L"Error", MB_OK | MB_ICONERROR);
+        }
+        return 0;
+    }
     case WM_COMMAND: {
         HMENU controlId = (HMENU)LOWORD(wParam);
         WORD notificationCode = HIWORD(wParam);
@@ -1216,8 +1256,9 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
         if (!sourceControl) break;
 
-        // Handle button click
-        if (dynamic_cast<Button*>(sourceControl)) {
+        // Handle Save button click (second-to-last control)
+        if (dynamic_cast<Button*>(sourceControl) &&
+            sourceControl->getHandle() == controls[controls.size() - 2]->getHandle()) {
             // Validate inputs before saving
             std::wstring errorMessage;
             if (!validateInputs(errorMessage)) {
@@ -1285,18 +1326,44 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
             if (atrelaxInput) inputData.ATRELAX = _wtof(atrelaxInput->getText().c_str());
             if (optimInput) inputData.OPTIM = _wtoi(optimInput->getText().c_str());
 
-            // Write to file
-            inputData.writeToFile(L"output.inp");
-            std::ifstream checkFile(wstring_to_string(L"output.inp"));
+            // Write to file in the same directory as XTurbTool.exe
+            std::wstring inputFilePath = exeDir + L"output.inp";
+            Logger::logError(L"Saving to: " + inputFilePath); // Add logging for debugging
+            inputData.writeToFile(inputFilePath);
+            std::ifstream checkFile(wstring_to_string(inputFilePath));
             if (!checkFile.is_open()) {
-                Logger::logError(L"Failed to write to output.inp!");
-                MessageBoxW(hwnd, L"Failed to write to output.inp!", L"Error", MB_OK | MB_ICONERROR);
+                Logger::logError(L"Failed to write to " + inputFilePath);
+                MessageBoxW(hwnd, (L"Failed to write to " + inputFilePath).c_str(), L"Error", MB_OK | MB_ICONERROR);
             }
             else {
                 checkFile.close();
-                std::wstring message = L"Data saved to output.inp";
+                std::wstring message = L"Data saved to " + inputFilePath;
                 MessageBoxW(hwnd, message.c_str(), L"Info", MB_OK | MB_ICONINFORMATION);
             }
+        }
+        // Handle Run XTurb button click (last control)
+        else if (dynamic_cast<Button*>(sourceControl) &&
+            sourceControl->getHandle() == controls[controls.size() - 1]->getHandle()) {
+            std::wstring inputFilePath = exeDir + L"output.inp"; // Use the same path as saved
+            // Check if the input file exists before running
+            std::ifstream checkFile(wstring_to_string(inputFilePath));
+            if (!checkFile.is_open()) {
+                Logger::logError(L"Input file not found: " + inputFilePath);
+                MessageBoxW(hwnd, (L"Input file not found: " + inputFilePath).c_str(), L"Error", MB_OK | MB_ICONERROR);
+                return 0;
+            }
+            checkFile.close();
+
+            HWND runButtonHandle = controls[controls.size() - 1]->getHandle();
+            EnableWindow(runButtonHandle, FALSE);
+
+            // Launch XTurb in a background thread
+            std::thread([this, inputFilePath, runButtonHandle]() {
+                bool success = this->xturbRunner->run(inputFilePath);
+
+                // Notify the GUI thread when done
+                PostMessage(this->hwnd, WM_USER + 101, success ? 1 : 0, (LPARAM)runButtonHandle);
+                }).detach();
         }
 
         // Handle input field changes
@@ -1315,5 +1382,6 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     default:
         return Window::handleMessage(msg, wParam, lParam);
     }
+
     return 0;
 }

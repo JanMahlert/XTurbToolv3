@@ -42,8 +42,8 @@ void InputData::writeToFile(const std::wstring& filename) const {
     }
 
     // Write BOM for UTF-8
-    const unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
-    file.write(reinterpret_cast<const char*>(bom), sizeof(bom));
+    //const unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
+    //file.write(reinterpret_cast<const char*>(bom), sizeof(bom));
 
     // &BLADE section
     file << "&BLADE\r\n";

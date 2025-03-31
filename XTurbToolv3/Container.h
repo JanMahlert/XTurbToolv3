@@ -5,11 +5,12 @@
 #include "Logger.h"
 #include "InputData.h"
 #include "Graph.h"
+#include "XTurbRunner.h"
 #include <vector>
 
 class Container : public Window {
 public:
-    Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height);
+    Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height, const std::wstring& xturbExeName = L"XTurb-g95-mingw32-cygwin-kirk.exe");
     ~Container() override;
     void create(HINSTANCE hInstance, int nCmdShow) override;
     LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override;
@@ -24,6 +25,7 @@ private:
     HFONT hFontBold;
     HMENU nextControlId;
     InputData inputData;
+    std::wstring exeDir;
 
     // Layout management
     static const int SPACING = 10;
@@ -32,6 +34,7 @@ private:
     int scrollPos;
 
     // Input fields for data collection
+	XTurbRunner* xturbRunner;
     InputField* nameInput;
     InputField* bnInput;
     InputField* rootInput;
