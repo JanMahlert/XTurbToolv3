@@ -67,4 +67,7 @@ bool XTurbRunner::run(const std::wstring& inputFilePath) {
     return true;
 }
 
+std::wstring XTurbRunner::getExePath() const {
+    return exePath;
+}
 

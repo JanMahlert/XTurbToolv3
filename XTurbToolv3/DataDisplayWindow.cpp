@@ -40,7 +40,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     RegisterClass(hInstance);
 
     hwnd = CreateWindowW(L"DataDisplayWindowClass", fileName.c_str(),
-        WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 600, 400, parent, nullptr, hInstance, this);
+        WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 700, 400, parent, nullptr, hInstance, this);
 
     if (!hwnd) {
         Logger::logError(L"Failed to create DataDisplayWindow instance");

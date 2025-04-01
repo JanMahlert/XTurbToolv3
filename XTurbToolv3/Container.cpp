@@ -1236,13 +1236,14 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         updateScrollRange();
         return 0;
     }
-    case WM_USER + 101: { // Post-XTurb execution
+    case WM_USER + 101: {
+        Logger::logError(L"WM_USER + 101 received with wParam=" + std::to_wstring(wParam));
         HWND runButton = (HWND)lParam;
         EnableWindow(runButton, TRUE);
         if (wParam == 1) {
             MessageBoxW(hwnd, L"XTurb executed successfully.", L"Success", MB_OK | MB_ICONINFORMATION);
             Logger::logError(L"Showing FileSelectorWindow");
-            runNumber++; // Increment run number
+            runNumber++;
             std::wstring title = L"File Selector XTurb Run " + std::to_wstring(runNumber);
             FileSelectorWindow* newSelector = new FileSelectorWindow(hInstance, hwnd, exeDir);
             newSelector->create(hInstance, SW_SHOW);
@@ -1251,7 +1252,7 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
                 delete newSelector;
             }
             else {
-                SetWindowTextW(newSelector->getHwnd(), title.c_str()); // Set custom title
+                SetWindowTextW(newSelector->getHwnd(), title.c_str());
                 Logger::logError(L"FileSelectorWindow created with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(newSelector->getHwnd())));
                 fileSelectors.push_back(newSelector);
             }
@@ -1379,6 +1380,7 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         // Handle Run XTurb button click (last control)
         else if (dynamic_cast<Button*>(sourceControl) &&
             sourceControl->getHandle() == controls[controls.size() - 1]->getHandle()) {
+            Logger::logError(L"Run XTurb button clicked, ID: " + std::to_wstring((LONG_PTR)controlId));
             std::wstring inputFilePath = exeDir + L"output.inp";
             std::ifstream checkFile(wstring_to_string(inputFilePath));
             if (!checkFile.is_open()) {
@@ -1388,12 +1390,13 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             checkFile.close();
 
-            HWND runButtonHandle = controls[controls.size() - 1]->getHandle();
+            HWND runButtonHandle = sourceControl->getHandle();
             EnableWindow(runButtonHandle, FALSE);
-
+            Logger::logError(L"Starting XTurbRunner with exe: " + xturbRunner->getExePath());
             std::thread([this, inputFilePath, runButtonHandle]() {
-                bool success = this->xturbRunner->run(inputFilePath);
-                PostMessage(this->hwnd, WM_USER + 101, success ? 1 : 0, (LPARAM)runButtonHandle);
+                bool success = xturbRunner->run(inputFilePath);
+                Logger::logError(L"XTurbRunner finished with success: " + std::to_wstring(success));
+                PostMessage(hwnd, WM_USER + 101, success ? 1 : 0, (LPARAM)runButtonHandle);
                 }).detach();
         }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Graph.h"
 #include "OutputData.h"
+#include <cmath>
 
 class GraphControl : public Graph {
 public:

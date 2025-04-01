@@ -22,7 +22,7 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
             data.tables.push_back(currentTable);
             Logger::logError(L"Table parsed with " + std::to_wstring(currentTable.rows.size()) + L" rows");
         }
-        currentTable.rows.clear(); // Only clear rows, keep headers
+        currentTable.rows.clear();
         inTableSection = true;
         Logger::logError(L"Entering table section");
         return true;
@@ -38,17 +38,17 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
                 std::wstring token = trimmedLine.substr(prev, pos - prev);
                 if (!token.empty()) {
                     Logger::logError(L"Token found: " + token);
-                    try {
-                        if (token == L"Infinity") {
-                            row.push_back(std::numeric_limits<double>::infinity());
-                        }
-                        else {
+                    if (token == L"Infinity") {
+                        row.push_back(std::numeric_limits<double>::infinity());
+                    }
+                    else {
+                        try {
                             row.push_back(std::stod(token));
                         }
-                    }
-                    catch (...) {
-                        Logger::logError(L"Failed to parse token: " + token);
-                        return false;
+                        catch (...) {
+                            Logger::logError(L"Invalid token '" + token + L"' replaced with NaN");
+                            row.push_back(std::numeric_limits<double>::quiet_NaN());
+                        }
                     }
                 }
                 prev = pos + 1;
@@ -56,17 +56,17 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
             std::wstring lastToken = trimmedLine.substr(prev);
             if (!lastToken.empty()) {
                 Logger::logError(L"Token found: " + lastToken);
-                try {
-                    if (lastToken == L"Infinity") {
-                        row.push_back(std::numeric_limits<double>::infinity());
-                    }
-                    else {
+                if (lastToken == L"Infinity") {
+                    row.push_back(std::numeric_limits<double>::infinity());
+                }
+                else {
+                    try {
                         row.push_back(std::stod(lastToken));
                     }
-                }
-                catch (...) {
-                    Logger::logError(L"Failed to parse token: " + lastToken);
-                    return false;
+                    catch (...) {
+                        Logger::logError(L"Invalid token '" + lastToken + L"' replaced with NaN");
+                        row.push_back(std::numeric_limits<double>::quiet_NaN());
+                    }
                 }
             }
             Logger::logError(L"Parsed " + std::to_wstring(row.size()) + L" values, expected " + std::to_wstring(currentTable.headers.size()));
@@ -90,7 +90,7 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
         std::wstring firstToken;
         ss >> firstToken;
         if (firstToken == L"r/R" || firstToken == L"Number") {
-            currentTable.headers.clear(); // Clear headers only when setting new ones
+            currentTable.headers.clear();
             std::wstringstream headerSS(trimmedLine);
             std::wstring header;
             while (headerSS >> header) {
