@@ -23,9 +23,10 @@ void DataDisplayWindow::RegisterClass(HINSTANCE hInstance) {
     }
 }
 
-DataDisplayWindow::DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data)
-    : Window(), parent(parent), data(data) {
+DataDisplayWindow::DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data, const std::wstring& fileName)
+    : Window(), parent(parent), data(data), fileName(fileName) {
     this->hInstance = hInstance;
+    Logger::logError(L"DataDisplayWindow constructed with " + std::to_wstring(data.tables.size()) + L" tables");
 }
 
 DataDisplayWindow::~DataDisplayWindow() {
@@ -38,7 +39,7 @@ DataDisplayWindow::~DataDisplayWindow() {
 void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     RegisterClass(hInstance);
 
-    hwnd = CreateWindowW(L"DataDisplayWindowClass", L"XTurb Output Data",
+    hwnd = CreateWindowW(L"DataDisplayWindowClass", fileName.c_str(), // Use fileName as title
         WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 600, 400, parent, nullptr, hInstance, this);
 
     if (!hwnd) {

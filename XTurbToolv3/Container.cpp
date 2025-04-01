@@ -1161,6 +1161,8 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 
+    static int runNumber = 0;
+
     switch (msg) {
     case WM_PAINT: {
         PAINTSTRUCT ps;
@@ -1240,7 +1242,8 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         if (wParam == 1) {
             MessageBoxW(hwnd, L"XTurb executed successfully.", L"Success", MB_OK | MB_ICONINFORMATION);
             Logger::logError(L"Showing FileSelectorWindow");
-            // Create a new FileSelectorWindow without touching existing ones
+            runNumber++; // Increment run number
+            std::wstring title = L"File Selector XTurb Run " + std::to_wstring(runNumber);
             FileSelectorWindow* newSelector = new FileSelectorWindow(hInstance, hwnd, exeDir);
             newSelector->create(hInstance, SW_SHOW);
             if (!newSelector->getHwnd()) {
@@ -1248,8 +1251,9 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
                 delete newSelector;
             }
             else {
+                SetWindowTextW(newSelector->getHwnd(), title.c_str()); // Set custom title
                 Logger::logError(L"FileSelectorWindow created with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(newSelector->getHwnd())));
-                fileSelectors.push_back(newSelector); // Add to vector for cleanup
+                fileSelectors.push_back(newSelector);
             }
         }
         else {
@@ -1264,11 +1268,11 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         OutputData outputData;
         BEMTOutputParser parser(filePath);
         if (parser.parse(outputData)) {
-            DataDisplayWindow* displayWindow = new DataDisplayWindow(hInstance, hwnd, outputData);
+            std::wstring fileName = filePath.substr(filePath.find_last_of(L"\\") + 1);
+            DataDisplayWindow* displayWindow = new DataDisplayWindow(hInstance, hwnd, outputData, fileName);
             displayWindow->create(hInstance, SW_SHOW);
             displayWindows.push_back(displayWindow);
             ShowWindow(displayWindow->getHwnd(), SW_SHOW);
-            // Keep FileSelectorWindow open
         }
         return 0;
     }

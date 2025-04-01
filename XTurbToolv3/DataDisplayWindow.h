@@ -6,7 +6,7 @@
 
 class DataDisplayWindow : public Window {
 public:
-    DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data);
+    DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data, const std::wstring& fileName);
     ~DataDisplayWindow() override;
     void create(HINSTANCE hInstance, int nCmdShow) override;
     LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override;
@@ -15,6 +15,7 @@ public:
 private:
     HWND parent;
     OutputData data;
+    std::wstring fileName;
     std::vector<GraphControl*> graphs;
     std::vector<Control*> controls;
     static bool classRegistered; // Track registration state

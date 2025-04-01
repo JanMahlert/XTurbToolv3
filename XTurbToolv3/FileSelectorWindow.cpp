@@ -31,6 +31,7 @@ FileSelectorWindow::FileSelectorWindow(HINSTANCE hInstance, HWND parent, const s
 
 void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
     static bool classRegistered = false;
+    static int windowCount = 0; // Track number of windows for positioning
     if (!classRegistered) {
         WNDCLASSEXW wcex = { 0 };
         wcex.cbSize = sizeof(WNDCLASSEX);
@@ -47,25 +48,28 @@ void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
         Logger::logError(L"FileSelectorWindow class registered successfully");
     }
 
-    if (!hwnd || !IsWindow(hwnd)) {
-        hwnd = CreateWindowW(L"FileSelectorWindowClass", L"Select XTurb Output File",
-            WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, 300, 200, parent, nullptr, hInstance, this);
-        if (!hwnd) {
-            Logger::logError(L"Failed to create FileSelectorWindow");
-            return;
-        }
+    // Increment window count and offset position
+    windowCount++;
+    int xPos = 100 + (windowCount - 1) * 20;
+    int yPos = 100 + (windowCount - 1) * 20;
+
+    hwnd = CreateWindowW(L"FileSelectorWindowClass", L"Select XTurb Output File",
+        WS_OVERLAPPEDWINDOW, xPos, yPos, 400, 200, parent, nullptr, hInstance, this);
+    if (!hwnd) {
+        Logger::logError(L"Failed to create FileSelectorWindow");
+        return;
     }
 
     // Create ComboBox
     comboBox = CreateWindowW(L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL,
-        10, 10, 260, 100, hwnd, (HMENU)1001, hInstance, nullptr);
+        10, 10, 360, 100, hwnd, (HMENU)1001, hInstance, nullptr);
     if (!comboBox) {
         Logger::logError(L"Failed to create combo box in FileSelectorWindow");
     }
 
     // Create Select Button
     HWND selectButton = CreateWindowW(L"BUTTON", L"Select", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        100, 50, 80, 30, hwnd, (HMENU)1002, hInstance, nullptr);
+        150, 50, 80, 30, hwnd, (HMENU)1002, hInstance, nullptr);
     if (!selectButton) {
         Logger::logError(L"Failed to create select button in FileSelectorWindow");
     }
