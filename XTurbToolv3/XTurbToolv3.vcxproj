@@ -128,10 +128,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BEMTOutputParser.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="Container.h" />
     <ClInclude Include="Control.h" />
+    <ClInclude Include="DataDisplayWindow.h" />
+    <ClInclude Include="FileSelectorWindow.h" />
     <ClInclude Include="Graph.h" />
+    <ClInclude Include="GraphControl.h" />
     <ClInclude Include="header.h" />
     <ClInclude Include="HelperFunctions.h" />
     <ClInclude Include="InputData.h" />
@@ -139,6 +143,8 @@
     <ClInclude Include="Label.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MainWindow.h" />
+    <ClInclude Include="OutputData.h" />
+    <ClInclude Include="OutputFileParser.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Window.h" />
@@ -146,16 +152,21 @@
     <ClInclude Include="XTurbTool.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BEMTOutputParser.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="Container.cpp" />
     <ClCompile Include="Control.cpp" />
+    <ClCompile Include="DataDisplayWindow.cpp" />
+    <ClCompile Include="FileSelectorWindow.cpp" />
     <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="GraphControl.cpp" />
     <ClCompile Include="HelperFunctions.cpp" />
     <ClCompile Include="InputData.cpp" />
     <ClCompile Include="InputField.cpp" />
     <ClCompile Include="Label.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="OutputFileParser.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="XTurbRunner.cpp" />
     <ClCompile Include="XTurbTool.cpp" />

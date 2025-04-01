@@ -4,6 +4,7 @@
 #include "InputField.h"
 #include "Logger.h"
 #include "HelperFunctions.h"
+#include "BEMTOutputParser.h"
 #include <algorithm>
 #include <thread>
 #include <fstream>
@@ -26,7 +27,7 @@ Container::Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, 
     rpmpresInput(nullptr), pitchpreInput(nullptr), methodInput(nullptr), jxInput(nullptr),
     cosdistrInput(nullptr), gnuplotInput(nullptr), aviscInput(nullptr), rlossInput(nullptr),
     tiplossInput(nullptr), axrelaxInput(nullptr), atrelaxInput(nullptr), optimInput(nullptr),
-    twistGraph(nullptr), chordGraph(nullptr), xturbRunner(nullptr), exeDir(L"") 
+    twistGraph(nullptr), chordGraph(nullptr), xturbRunner(nullptr), exeDir(L"")
 {
     this->hInstance = hInstance;
     this->hwnd = parent;
@@ -66,7 +67,11 @@ Container::~Container() {
     delete twistGraph;
     delete chordGraph;
     delete xturbRunner;
+    for (auto window : displayWindows) delete window; // Clean up all display windows
+    for (auto* selector : fileSelectors) delete selector;
     xturbRunner = nullptr;
+    displayWindows.clear();
+    fileSelectors.clear();
 }
 
 // Generate a unique control ID
@@ -1229,15 +1234,41 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         updateScrollRange();
         return 0;
     }
-    case WM_USER + 101: {
+    case WM_USER + 101: { // Post-XTurb execution
         HWND runButton = (HWND)lParam;
-        EnableWindow(runButton, TRUE); // Re-enable the button
-
+        EnableWindow(runButton, TRUE);
         if (wParam == 1) {
             MessageBoxW(hwnd, L"XTurb executed successfully.", L"Success", MB_OK | MB_ICONINFORMATION);
+            Logger::logError(L"Showing FileSelectorWindow");
+            // Create a new FileSelectorWindow without touching existing ones
+            FileSelectorWindow* newSelector = new FileSelectorWindow(hInstance, hwnd, exeDir);
+            newSelector->create(hInstance, SW_SHOW);
+            if (!newSelector->getHwnd()) {
+                Logger::logError(L"FileSelectorWindow creation failed");
+                delete newSelector;
+            }
+            else {
+                Logger::logError(L"FileSelectorWindow created with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(newSelector->getHwnd())));
+                fileSelectors.push_back(newSelector); // Add to vector for cleanup
+            }
         }
         else {
             MessageBoxW(hwnd, L"XTurb execution failed.", L"Error", MB_OK | MB_ICONERROR);
+        }
+        return 0;
+    }
+    case WM_USER + 102: { // File selected
+        FileSelectorWindow* selector = reinterpret_cast<FileSelectorWindow*>(lParam);
+        std::wstring filePath = selector->getSelectedFile();
+        Logger::logError(L"Opening file: " + filePath);
+        OutputData outputData;
+        BEMTOutputParser parser(filePath);
+        if (parser.parse(outputData)) {
+            DataDisplayWindow* displayWindow = new DataDisplayWindow(hInstance, hwnd, outputData);
+            displayWindow->create(hInstance, SW_SHOW);
+            displayWindows.push_back(displayWindow);
+            ShowWindow(displayWindow->getHwnd(), SW_SHOW);
+            // Keep FileSelectorWindow open
         }
         return 0;
     }
@@ -1344,8 +1375,7 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         // Handle Run XTurb button click (last control)
         else if (dynamic_cast<Button*>(sourceControl) &&
             sourceControl->getHandle() == controls[controls.size() - 1]->getHandle()) {
-            std::wstring inputFilePath = exeDir + L"output.inp"; // Use the same path as saved
-            // Check if the input file exists before running
+            std::wstring inputFilePath = exeDir + L"output.inp";
             std::ifstream checkFile(wstring_to_string(inputFilePath));
             if (!checkFile.is_open()) {
                 Logger::logError(L"Input file not found: " + inputFilePath);
@@ -1357,11 +1387,8 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
             HWND runButtonHandle = controls[controls.size() - 1]->getHandle();
             EnableWindow(runButtonHandle, FALSE);
 
-            // Launch XTurb in a background thread
             std::thread([this, inputFilePath, runButtonHandle]() {
                 bool success = this->xturbRunner->run(inputFilePath);
-
-                // Notify the GUI thread when done
                 PostMessage(this->hwnd, WM_USER + 101, success ? 1 : 0, (LPARAM)runButtonHandle);
                 }).detach();
         }

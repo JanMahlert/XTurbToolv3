@@ -1,5 +1,6 @@
 #include "Window.h" // Include the header for this class
 #include "XTurbTool.h" // Include resource definitions (e.g., IDC_XTURBTOOLV3)
+#include "Logger.h" // Include logger for error messages
 
 // Constructor: Initializes members to safe defaults
 Window::Window() : hwnd(nullptr), hInstance(nullptr), isValid(true) {}
@@ -60,30 +61,31 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // Static window procedure to route messages to the instance
 LRESULT CALLBACK Window::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    Window* pThis = nullptr; // Pointer to our class instance
+    Window* pThis = nullptr;
 
-    if (msg == WM_NCCREATE) { // Before the window is created
+    if (msg == WM_NCCREATE) {
         CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-        pThis = static_cast<Window*>(pCreate->lpCreateParams); // Get instance from creation params
-        if (!pThis) { // Check if pThis is null
-            MessageBoxW(nullptr, L"Failed to get Window instance in WM_NCCREATE!", L"Error", MB_OK | MB_ICONERROR);
-            return FALSE; // Fail window creation
-        }
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis)); // Store instance in window data
-        if (GetLastError() != 0) { // Check for errors in SetWindowLongPtr
-            MessageBoxW(nullptr, L"Failed to set GWLP_USERDATA in WM_NCCREATE!", L"Error", MB_OK | MB_ICONERROR);
+        pThis = static_cast<Window*>(pCreate->lpCreateParams);
+        if (!pThis) {
+            Logger::logError(L"WM_NCCREATE: pThis is null");
             return FALSE;
         }
-        pThis->hwnd = hWnd; // Set the handle in our instance
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
+        if (GetLastError() != 0) {
+            Logger::logError(L"WM_NCCREATE: SetWindowLongPtr failed with error " + std::to_wstring(GetLastError()));
+            return FALSE;
+        }
+        pThis->hwnd = hWnd;
+        Logger::logError(L"WM_NCCREATE: Window created with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(hWnd)));
     }
     else {
-        pThis = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA)); // Retrieve instance for other messages
+        pThis = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
 
-    if (pThis && pThis->isValid) { // Check if pThis is valid and the object hasn’t been destroyed
-        return pThis->handleMessage(msg, wParam, lParam); // Call the instance’s message handler
+    if (pThis && pThis->isValid) {
+        return pThis->handleMessage(msg, wParam, lParam);
     }
-    return DefWindowProc(hWnd, msg, wParam, lParam); // Default handling if no instance or invalid
+    return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
 // Getter for the window handle

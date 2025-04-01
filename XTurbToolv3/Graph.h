@@ -3,12 +3,13 @@
 #include <windows.h>
 #include <vector>
 #include "InputField.h"
+// Removed Control.h include since Graph doesn't inherit from Control in your version
 
 class Graph {
 public:
     Graph(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height);
     virtual ~Graph() = default;
-    void create();
+    virtual void create(); // Already virtual in your version
     HWND getHandle() const { return hwnd; }
     virtual void draw(HDC hdc, RECT rect) = 0; // Pure virtual method for drawing
 

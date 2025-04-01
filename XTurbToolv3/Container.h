@@ -6,6 +6,8 @@
 #include "InputData.h"
 #include "Graph.h"
 #include "XTurbRunner.h"
+#include "FileSelectorWindow.h"
+#include "DataDisplayWindow.h"
 #include <vector>
 
 class Container : public Window {
@@ -26,6 +28,10 @@ private:
     HMENU nextControlId;
     InputData inputData;
     std::wstring exeDir;
+
+    // Output Display
+    std::vector<DataDisplayWindow*> displayWindows; // Multiple display windows
+    std::vector<FileSelectorWindow*> fileSelectors;
 
     // Layout management
     static const int SPACING = 10;
