@@ -1,7 +1,6 @@
 #include "BEMTOutputParser.h"
 #include <fstream>
 #include <sstream>
-#include <string>
 #include "Logger.h"
 
 BEMTOutputParser::BEMTOutputParser(const std::wstring& filePath)
@@ -13,59 +12,77 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
     trimmedLine.erase(0, trimmedLine.find_first_not_of(L" \t"));
     trimmedLine.erase(trimmedLine.find_last_not_of(L" \t") + 1);
 
-    if (trimmedLine.empty()) return true;
+    if (trimmedLine.empty()) {
+        Logger::logError(L"Empty line skipped");
+        return true;
+    }
 
     if (trimmedLine.find(L"---") != std::wstring::npos) {
         if (inTableSection && !currentTable.headers.empty() && !currentTable.rows.empty()) {
             data.tables.push_back(currentTable);
             Logger::logError(L"Table parsed with " + std::to_wstring(currentTable.rows.size()) + L" rows");
         }
-        currentTable = OutputData::Table();
+        currentTable.rows.clear(); // Only clear rows, keep headers
         inTableSection = true;
         Logger::logError(L"Entering table section");
         return true;
     }
 
     if (inTableSection) {
+        Logger::logError(L"Reached table section for line: " + trimmedLine);
         if (!currentTable.headers.empty()) {
+            Logger::logError(L"Processing table row: " + trimmedLine);
             std::vector<double> row;
-            std::wstring token;
-            size_t start = 0, end = 0;
-            while (start < trimmedLine.length()) {
-                while (start < trimmedLine.length() && (trimmedLine[start] == L' ' || trimmedLine[start] == L'\t')) start++;
-                if (start >= trimmedLine.length()) break;
-                end = trimmedLine.find_first_of(L" \t", start);
-                if (end == std::wstring::npos) end = trimmedLine.length();
-                token = trimmedLine.substr(start, end - start);
+            size_t pos = 0, prev = 0;
+            while ((pos = trimmedLine.find(L" ", prev)) != std::wstring::npos) {
+                std::wstring token = trimmedLine.substr(prev, pos - prev);
                 if (!token.empty()) {
+                    Logger::logError(L"Token found: " + token);
                     try {
                         if (token == L"Infinity") {
                             row.push_back(std::numeric_limits<double>::infinity());
-                            Logger::logError(L"Parsed token: Infinity");
                         }
                         else {
-                            double value = std::stod(token);
-                            row.push_back(value);
-                            Logger::logError(L"Parsed token: " + token);
+                            row.push_back(std::stod(token));
                         }
                     }
                     catch (...) {
-                        Logger::logError(L"Invalid number in row: " + trimmedLine + L", token: " + token);
+                        Logger::logError(L"Failed to parse token: " + token);
                         return false;
                     }
                 }
-                start = end + 1;
+                prev = pos + 1;
             }
+            std::wstring lastToken = trimmedLine.substr(prev);
+            if (!lastToken.empty()) {
+                Logger::logError(L"Token found: " + lastToken);
+                try {
+                    if (lastToken == L"Infinity") {
+                        row.push_back(std::numeric_limits<double>::infinity());
+                    }
+                    else {
+                        row.push_back(std::stod(lastToken));
+                    }
+                }
+                catch (...) {
+                    Logger::logError(L"Failed to parse token: " + lastToken);
+                    return false;
+                }
+            }
+            Logger::logError(L"Parsed " + std::to_wstring(row.size()) + L" values, expected " + std::to_wstring(currentTable.headers.size()));
             if (!row.empty() && row.size() == currentTable.headers.size()) {
                 currentTable.rows.push_back(row);
                 Logger::logError(L"Data row added: " + trimmedLine);
             }
             else if (!row.empty()) {
-                Logger::logError(L"Row size mismatch: " + trimmedLine + L", expected " + std::to_wstring(currentTable.headers.size()) + L", got " + std::to_wstring(row.size()));
+                Logger::logError(L"Row size mismatch: got " + std::to_wstring(row.size()) + L", expected " + std::to_wstring(currentTable.headers.size()));
             }
             else {
-                Logger::logError(L"No tokens parsed from row: " + trimmedLine);
+                Logger::logError(L"No valid tokens parsed from row");
             }
+        }
+        else {
+            Logger::logError(L"Headers empty in table section");
         }
     }
     else {
@@ -73,13 +90,13 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
         std::wstring firstToken;
         ss >> firstToken;
         if (firstToken == L"r/R" || firstToken == L"Number") {
-            currentTable.headers.clear();
+            currentTable.headers.clear(); // Clear headers only when setting new ones
             std::wstringstream headerSS(trimmedLine);
             std::wstring header;
             while (headerSS >> header) {
                 currentTable.headers.push_back(header);
             }
-            Logger::logError(L"Table headers set: " + trimmedLine);
+            Logger::logError(L"Table headers set: " + trimmedLine + L" (" + std::to_wstring(currentTable.headers.size()) + L" columns)");
         }
         else {
             size_t eqPos = trimmedLine.find(L"=");
@@ -105,6 +122,7 @@ bool BEMTOutputParser::parse(OutputData& data) {
 
     std::wstring line;
     while (std::getline(file, line)) {
+        Logger::logError(L"Reading line: " + line);
         if (!processLine(line, data)) {
             file.close();
             return false;

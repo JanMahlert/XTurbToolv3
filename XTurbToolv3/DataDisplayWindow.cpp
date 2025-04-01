@@ -39,7 +39,7 @@ DataDisplayWindow::~DataDisplayWindow() {
 void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     RegisterClass(hInstance);
 
-    hwnd = CreateWindowW(L"DataDisplayWindowClass", fileName.c_str(), // Use fileName as title
+    hwnd = CreateWindowW(L"DataDisplayWindowClass", fileName.c_str(),
         WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 600, 400, parent, nullptr, hInstance, this);
 
     if (!hwnd) {
@@ -70,19 +70,34 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
 
     Logger::logError(L"Creating graphs for " + std::to_wstring(data.tables.size()) + L" tables");
     for (const auto& table : data.tables) {
-        GraphControl* graph = new GraphControl(hwnd, hInstance, 10, y, 580, 200, table);
-        // create() is called in constructor, so no need to call it again
-        graphs.push_back(graph);
-        HWND graphHwnd = graph->getHandle();
-        if (graphHwnd) {
-            Logger::logError(L"GraphControl created at y=" + std::to_wstring(y) + L" with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(graphHwnd)));
-            InvalidateRect(graphHwnd, nullptr, TRUE);
-            UpdateWindow(graphHwnd);
+        if (table.headers.size() < 2) { // Need at least 2 columns for a graph
+            Logger::logError(L"Table has fewer than 2 columns, skipping graphs");
+            continue;
         }
-        else {
-            Logger::logError(L"GraphControl creation failed at y=" + std::to_wstring(y));
+
+        // Create a graph for each column (except the first, "r/R") vs. "r/R"
+        for (size_t col = 1; col < table.headers.size(); ++col) {
+            OutputData::Table graphTable;
+            graphTable.headers = { table.headers[0], table.headers[col] }; // e.g., "r/R" vs. "Chord/R"
+            for (const auto& row : table.rows) {
+                if (row.size() > col) {
+                    graphTable.rows.push_back({ row[0], row[col] }); // Pair "r/R" with the current column
+                }
+            }
+
+            GraphControl* graph = new GraphControl(hwnd, hInstance, 10, y, 580, 200, graphTable);
+            graphs.push_back(graph);
+            HWND graphHwnd = graph->getHandle();
+            if (graphHwnd) {
+                Logger::logError(L"GraphControl created at y=" + std::to_wstring(y) + L" with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(graphHwnd)));
+                InvalidateRect(graphHwnd, nullptr, TRUE);
+                UpdateWindow(graphHwnd);
+            }
+            else {
+                Logger::logError(L"GraphControl creation failed at y=" + std::to_wstring(y));
+            }
+            y += 210; // Height of graph (200) + spacing (10)
         }
-        y += 210;
     }
 
     SCROLLINFO si = { 0 };
