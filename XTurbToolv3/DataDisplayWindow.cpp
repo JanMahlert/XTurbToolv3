@@ -1,7 +1,10 @@
 #include "DataDisplayWindow.h"
+#include "GraphControl.h"
 #include "Label.h"
 #include "InputField.h"
 #include "Logger.h"
+#include <fstream>
+#include <sstream>
 
 bool DataDisplayWindow::classRegistered = false;
 
@@ -23,8 +26,8 @@ void DataDisplayWindow::RegisterClass(HINSTANCE hInstance) {
     }
 }
 
-DataDisplayWindow::DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data, const std::wstring& fileName)
-    : Window(), parent(parent), data(data), fileName(fileName) {
+DataDisplayWindow::DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data, const std::wstring& filePath)
+    : Window(), parent(parent), data(data), fileName(filePath) {
     this->hInstance = hInstance;
     Logger::logError(L"DataDisplayWindow constructed with " + std::to_wstring(data.tables.size()) + L" tables");
 }
@@ -39,8 +42,10 @@ DataDisplayWindow::~DataDisplayWindow() {
 void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     RegisterClass(hInstance);
 
-    hwnd = CreateWindowW(L"DataDisplayWindowClass", fileName.c_str(),
-        WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 700, 400, parent, nullptr, hInstance, this);
+    // Use only the filename for the window title
+    std::wstring title = fileName.substr(fileName.find_last_of(L"\\") + 1);
+    hwnd = CreateWindowW(L"DataDisplayWindowClass", title.c_str(),
+        WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 600, 600, parent, nullptr, hInstance, this);
 
     if (!hwnd) {
         Logger::logError(L"Failed to create DataDisplayWindow instance");
@@ -48,40 +53,56 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     }
 
     int y = 10;
-    const int labelWidth = 200;
-    const int inputWidth = 300;
-    const int height = 20;
     const int spacing = 10;
 
-    Logger::logError(L"Creating single value controls");
-    for (const auto& [key, value] : data.singleValues) {
-        Label* label = new Label(hwnd, hInstance, 10, y, labelWidth, height, key + L":");
-        label->create();
-        controls.push_back(label);
+    // Use the headerText from OutputData
+    std::wstring headerText = data.headerText;
 
-        InputField* field = new InputField(hwnd, hInstance, 10 + labelWidth + 10, y, inputWidth, height, (HMENU)(1000 + y));
-        field->create();
-        field->setDefaultText(value);
-        SendMessageW(field->getHandle(), EM_SETREADONLY, TRUE, 0);
-        controls.push_back(field);
+    // Remove trailing newline
+    if (!headerText.empty() && headerText.back() == L'\n') {
+        headerText.pop_back();
+        if (!headerText.empty() && headerText.back() == L'\r') {
+            headerText.pop_back();
+        }
+    }
 
-        y += height + spacing;
+    Logger::logError(L"Creating header text block with content:\n" + headerText);
+
+    // Adjust text field size here (width, height)
+    const int textFieldWidth = 580;  // Adjust width as needed
+    const int textFieldHeight = 250; // Adjust height as needed (increased from 200 to 250 for more visibility)
+
+    HWND textBox = CreateWindowW(L"EDIT", headerText.c_str(),
+        WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY | WS_BORDER,
+        10, y, textFieldWidth, textFieldHeight, hwnd, (HMENU)1001, hInstance, nullptr);
+    if (!textBox) {
+        Logger::logError(L"Failed to create header text box");
+    }
+    else {
+        // Set a fixed-width font with adjustable size
+        HFONT hFont = CreateFontW(-10, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, // -10 for ~10pt font (smaller)
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, FIXED_PITCH | FF_DONTCARE, L"Consolas");
+        if (hFont) {
+            SendMessage(textBox, WM_SETFONT, (WPARAM)hFont, TRUE);
+        }
+        controls.push_back(new InputField(hwnd, hInstance, 10, y, textFieldWidth, textFieldHeight, (HMENU)1001));
+        y += textFieldHeight + spacing;
     }
 
     Logger::logError(L"Creating graphs for " + std::to_wstring(data.tables.size()) + L" tables");
     for (const auto& table : data.tables) {
-        if (table.headers.size() < 2) { // Need at least 2 columns for a graph
+        if (table.headers.size() < 2) {
             Logger::logError(L"Table has fewer than 2 columns, skipping graphs");
             continue;
         }
 
-        // Create a graph for each column (except the first, "r/R") vs. "r/R"
         for (size_t col = 1; col < table.headers.size(); ++col) {
             OutputData::Table graphTable;
-            graphTable.headers = { table.headers[0], table.headers[col] }; // e.g., "r/R" vs. "Chord/R"
+            graphTable.headers = { table.headers[0], table.headers[col] };
             for (const auto& row : table.rows) {
                 if (row.size() > col) {
-                    graphTable.rows.push_back({ row[0], row[col] }); // Pair "r/R" with the current column
+                    graphTable.rows.push_back({ row[0], row[col] });
                 }
             }
 
@@ -96,7 +117,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
             else {
                 Logger::logError(L"GraphControl creation failed at y=" + std::to_wstring(y));
             }
-            y += 210; // Height of graph (200) + spacing (10)
+            y += 210;
         }
     }
 
@@ -105,10 +126,10 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     si.fMask = SIF_RANGE | SIF_PAGE;
     si.nMin = 0;
     si.nMax = y;
-    si.nPage = 400;
+    si.nPage = 600;
     SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
 
-    ShowWindow(hwnd, nCmdShow);
+    ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
 }
 
@@ -142,7 +163,6 @@ LRESULT DataDisplayWindow::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
         DestroyWindow(hwnd);
         break;
     case WM_DESTROY:
-        // No PostQuitMessage; cleanup handled by Container
         break;
     default:
         return Window::handleMessage(msg, wParam, lParam);

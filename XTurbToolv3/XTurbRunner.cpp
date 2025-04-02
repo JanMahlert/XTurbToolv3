@@ -9,6 +9,7 @@ bool XTurbRunner::run(const std::wstring& inputFilePath) {
     std::filesystem::path exeFsPath(exePath);
     std::wstring exeDir = exeFsPath.parent_path().wstring();
     std::wstring batFilePath = exeDir + L"\\run_xturb_temp.bat";
+    std::wstring logFilePath = exeDir + L"\\XTurb_Execution_Log.txt"; // Log file path
 
     // Create a .bat file to run XTurb with input redirection
     std::wofstream batFile(batFilePath);
@@ -20,7 +21,7 @@ bool XTurbRunner::run(const std::wstring& inputFilePath) {
     // Write the batch contents
     batFile << L"@echo off\n";
     batFile << L"cd /d \"" << exeDir << L"\"\n";
-    batFile << L"\"" << exePath << L"\" < \"" << inputFilePath << L"\"\n";
+    batFile << L"\"" << exePath << L"\" < \"" << inputFilePath << L"\" > \"" << logFilePath << L"\" 2>&1\n";
     batFile.close();
 
     // Command line to run the batch
@@ -54,11 +55,20 @@ bool XTurbRunner::run(const std::wstring& inputFilePath) {
         TerminateProcess(pi.hProcess, 1);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        std::filesystem::remove(batFilePath);
         return false;
     }
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+
+    // Check if the log file was created
+    if (!std::filesystem::exists(logFilePath)) {
+        Logger::logError(L"Log file not created: " + logFilePath);
+    }
+    else {
+        Logger::logError(L"XTurb completed successfully. Output logged to: " + logFilePath);
+    }
 
     // Cleanup Process; Important, otherwise program freezes.
     std::filesystem::remove(batFilePath);

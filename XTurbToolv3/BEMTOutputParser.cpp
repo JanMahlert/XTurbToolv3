@@ -14,6 +14,7 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
 
     if (trimmedLine.empty()) {
         Logger::logError(L"Empty line skipped");
+        data.headerText += line + L"\r\n"; // Add to header text
         return true;
     }
 
@@ -24,7 +25,7 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
         }
         currentTable.rows.clear();
         inTableSection = true;
-        Logger::logError(L"Entering table section");
+        data.headerText += line + L"\r\n"; // Add to header text
         return true;
     }
 
@@ -97,6 +98,10 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
                 currentTable.headers.push_back(header);
             }
             Logger::logError(L"Table headers set: " + trimmedLine + L" (" + std::to_wstring(currentTable.headers.size()) + L" columns)");
+            // If this is the "r/R" table, stop adding to headerText
+            if (firstToken != L"r/R") {
+                data.headerText += line + L"\r\n";
+            }
         }
         else {
             size_t eqPos = trimmedLine.find(L"=");
@@ -108,6 +113,7 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
                 data.singleValues[key] = value;
                 Logger::logError(L"Single value: " + key + L" = " + value);
             }
+            data.headerText += line + L"\r\n"; // Add to header text
         }
     }
     return true;
