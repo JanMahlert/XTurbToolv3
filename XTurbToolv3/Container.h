@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Window.h"
 #include "Control.h"
 #include "Logger.h"
@@ -10,6 +9,7 @@
 #include "DataDisplayWindow.h"
 #include <vector>
 
+// This manages the main container window and its controls (Graph, Input fields, etc.)
 class Container : public Window {
 public:
     Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height, const std::wstring& xturbExeName = L"XTurb-g95-mingw32-cygwin-kirk.exe");
@@ -29,9 +29,9 @@ private:
     InputData inputData;
     std::wstring exeDir;
 
-    // Output Display
-    std::vector<DataDisplayWindow*> displayWindows; // Multiple display windows
-    std::vector<FileSelectorWindow*> fileSelectors;
+    // Output Display, using vector for better clean up; can be changed if necessary in the future, but will need work
+    std::vector<DataDisplayWindow*> displayWindows; 
+	std::vector<FileSelectorWindow*> fileSelectors;
 
     // Layout management
     static const int SPACING = 10;
@@ -110,5 +110,5 @@ private:
     void addLabeledInput(const std::wstring& labelText, InputField*& inputField, int labelWidth, int inputWidth, int height);
     void updateScrollRange();
     bool validateInputs(std::wstring& errorMessage);
-    void updateGraphs(); // Method to update both graphs
+    void updateGraphs();
 };

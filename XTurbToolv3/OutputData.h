@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 
+// This class is storing the output data from XTurb. The BEMTOutputParser class is using this to store the data.
 class OutputData {
 public:
     std::map<std::wstring, std::wstring> singleValues;
@@ -11,7 +12,7 @@ public:
         std::vector<std::vector<double>> rows;
     };
     std::vector<Table> tables;
-    std::wstring headerText; // New field to store header text
+    std::wstring headerText;
 
     void clear() {
         singleValues.clear();

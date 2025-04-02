@@ -1,10 +1,9 @@
 #pragma once
+#include "header.h" 
+#include <string> 
 
-#include "header.h" // For Windows headers
-#include <string> // For std::wstring
-
-// Simple logger class for error handling
+// Log error messages. Use this throughout the app to log errors
 class Logger {
 public:
-    static void logError(const std::wstring& message); // Log an error message
+    static void logError(const std::wstring& message);
 };

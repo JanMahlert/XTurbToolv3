@@ -4,6 +4,7 @@
 #include "GraphControl.h"
 #include <vector>
 
+// This class displays the output data from XTurb in a new window (so it naturally derives from Window)
 class DataDisplayWindow : public Window {
 public:
     DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data, const std::wstring& fileName);
@@ -18,5 +19,5 @@ private:
     std::wstring fileName;
     std::vector<GraphControl*> graphs;
     std::vector<Control*> controls;
-    static bool classRegistered; // Track registration state
+	static bool classRegistered; // Added to track the Registration; had a bunch of problems with this, good for debugging
 };

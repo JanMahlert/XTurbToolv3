@@ -3,9 +3,10 @@
 
 class OutputData;
 
+// This class is the base class to parse output data from XTurb
 class OutputFileParser {
 public:
-    OutputFileParser(const std::wstring& filePath); // Declaration only
+    OutputFileParser(const std::wstring& filePath);
     virtual ~OutputFileParser() = default;
     virtual bool parse(OutputData& data) = 0;
 

@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+//This defines all the input data for XTurb. Sadly no way to make this look nicer.
+//Vector is used for the arrays, so they can be changed in size dynamically.
 struct InputData {
     // &BLADE section
     std::wstring name;
@@ -74,6 +76,7 @@ struct InputData {
     // &OPTI section
     int OPTIM;
 
+	// Helper functions
     InputData();
     void writeToFile(const std::wstring& filename) const;
 };

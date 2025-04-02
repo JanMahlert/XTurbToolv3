@@ -66,7 +66,7 @@ void GraphControl::draw(HDC hdc, RECT rect) {
     double maxY = *std::max_element(yData.begin(), yData.end());
 
     if (minX >= maxX || minY >= maxY) {
-        TextOutW(hdc, rect.left + 10, rect.top + 10, L"Invalid range", 13);
+        TextOutW(hdc, rect.left + 10, rect.top + 10, L"No Printable Values", 13);
         Logger::logError(L"GraphControl: Invalid range for plotting");
         SelectObject(hdc, hOldPen);
         DeleteObject(hPen);

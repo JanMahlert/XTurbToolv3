@@ -1,17 +1,16 @@
 #pragma once
-
 #include <windows.h>
 #include <vector>
 #include "InputField.h"
-// Removed Control.h include since Graph doesn't inherit from Control in your version
 
+// This is the base class for all graph types. Used in the main window and the DataDisplayWindow.
 class Graph {
 public:
     Graph(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height);
     virtual ~Graph() = default;
-    virtual void create(); // Already virtual in your version
+    virtual void create();
     HWND getHandle() const { return hwnd; }
-    virtual void draw(HDC hdc, RECT rect) = 0; // Pure virtual method for drawing
+    virtual void draw(HDC hdc, RECT rect) = 0; // Pure virtual method since it depends an what needs to be drawn
 
 protected:
     HWND hwnd;

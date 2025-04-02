@@ -45,7 +45,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     // Use only the filename for the window title
     std::wstring title = fileName.substr(fileName.find_last_of(L"\\") + 1);
     hwnd = CreateWindowW(L"DataDisplayWindowClass", title.c_str(),
-        WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 600, 600, parent, nullptr, hInstance, this);
+        WS_OVERLAPPEDWINDOW | WS_VSCROLL, CW_USEDEFAULT, 0, 1000, 600, parent, nullptr, hInstance, this);
 
     if (!hwnd) {
         Logger::logError(L"Failed to create DataDisplayWindow instance");
@@ -69,8 +69,8 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     Logger::logError(L"Creating header text block with content:\n" + headerText);
 
     // Adjust text field size here (width, height)
-    const int textFieldWidth = 580;  // Adjust width as needed
-    const int textFieldHeight = 250; // Adjust height as needed (increased from 200 to 250 for more visibility)
+    const int textFieldWidth = 900;  // Adjust width as needed
+    const int textFieldHeight = 300; // Adjust height as needed (increased from 200 to 250 for more visibility)
 
     HWND textBox = CreateWindowW(L"EDIT", headerText.c_str(),
         WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY | WS_BORDER,
@@ -80,7 +80,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     }
     else {
         // Set a fixed-width font with adjustable size
-        HFONT hFont = CreateFontW(-10, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, // -10 for ~10pt font (smaller)
+        HFONT hFont = CreateFontW(-11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, // -10 for ~10pt font (smaller)
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             DEFAULT_QUALITY, FIXED_PITCH | FF_DONTCARE, L"Consolas");
         if (hFont) {
@@ -106,7 +106,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
                 }
             }
 
-            GraphControl* graph = new GraphControl(hwnd, hInstance, 10, y, 580, 200, graphTable);
+            GraphControl* graph = new GraphControl(hwnd, hInstance, 10, y, 700, 400, graphTable);
             graphs.push_back(graph);
             HWND graphHwnd = graph->getHandle();
             if (graphHwnd) {
@@ -117,7 +117,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
             else {
                 Logger::logError(L"GraphControl creation failed at y=" + std::to_wstring(y));
             }
-            y += 210;
+            y += 410;
         }
     }
 

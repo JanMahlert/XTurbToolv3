@@ -54,7 +54,7 @@ void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
     int yPos = 100 + (windowCount - 1) * 20;
 
     hwnd = CreateWindowW(L"FileSelectorWindowClass", L"Select XTurb Output File",
-        WS_OVERLAPPEDWINDOW, xPos, yPos, 400, 200, parent, nullptr, hInstance, this);
+        WS_OVERLAPPEDWINDOW, xPos, yPos, 415, 160, parent, nullptr, hInstance, this);
     if (!hwnd) {
         Logger::logError(L"Failed to create FileSelectorWindow");
         return;
@@ -62,14 +62,14 @@ void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
 
     // Create ComboBox
     comboBox = CreateWindowW(L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL,
-        10, 10, 360, 100, hwnd, (HMENU)1001, hInstance, nullptr);
+        10, 10, 380, 100, hwnd, (HMENU)1001, hInstance, nullptr);
     if (!comboBox) {
         Logger::logError(L"Failed to create combo box in FileSelectorWindow");
     }
 
     // Create Select Button
     HWND selectButton = CreateWindowW(L"BUTTON", L"Select", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        150, 50, 80, 30, hwnd, (HMENU)1002, hInstance, nullptr);
+        150, 70, 100, 30, hwnd, (HMENU)1002, hInstance, nullptr);
     if (!selectButton) {
         Logger::logError(L"Failed to create select button in FileSelectorWindow");
     }
