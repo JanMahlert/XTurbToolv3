@@ -3,15 +3,18 @@
 #include <vector>
 #include <string>
 
-// This class creates a Window where you can select the .dat files that XTurb created (akso derived from Window, since it creates a new window)
+// Forward declaration of FileCompressor
+class FileCompressor;
+
 class FileSelectorWindow : public Window {
 public:
     FileSelectorWindow(HINSTANCE hInstance, HWND parent, const std::wstring& directory);
+    ~FileSelectorWindow();
     void create(HINSTANCE hInstance, int nCmdShow) override;
     LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override;
     std::wstring getSelectedFile() const { return selectedFile; }
     void refreshFileList();
-    static void RegisterClass(HINSTANCE hInstance); 
+    static void RegisterClass(HINSTANCE hInstance);
 
 private:
     HWND parent;
@@ -19,5 +22,6 @@ private:
     std::vector<std::wstring> files;
     HWND comboBox;
     std::wstring selectedFile;
-    static bool classRegistered; // Also tracks the class registration
+    static bool classRegistered;
+    FileCompressor* compressor;
 };

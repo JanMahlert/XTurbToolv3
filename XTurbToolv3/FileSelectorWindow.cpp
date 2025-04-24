@@ -3,8 +3,25 @@
 #include <commctrl.h>
 #include <filesystem>
 #include "Logger.h"
+#include "FileCompressor.h"
 
 bool FileSelectorWindow::classRegistered = false;
+
+FileSelectorWindow::FileSelectorWindow(HINSTANCE hInstance, HWND parent, const std::wstring& directory)
+    : Window(), parent(parent), directory(directory), comboBox(nullptr), compressor(nullptr) {
+    this->hInstance = hInstance;
+    if (!hInstance) {
+        Logger::logError(L"Invalid hInstance in FileSelectorWindow constructor");
+    }
+    if (parent && !IsWindow(parent)) {
+        Logger::logError(L"Invalid parent HWND in FileSelectorWindow constructor");
+    }
+    compressor = new FileCompressor(std::filesystem::path(directory).string());
+}
+
+FileSelectorWindow::~FileSelectorWindow() {
+    delete compressor;
+}
 
 void FileSelectorWindow::RegisterClass(HINSTANCE hInstance) {
     if (!classRegistered) {
@@ -16,47 +33,29 @@ void FileSelectorWindow::RegisterClass(HINSTANCE hInstance) {
         wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
         wcex.lpszClassName = L"FileSelectorWindowClass";
         if (!RegisterClassExW(&wcex)) {
-            Logger::logError(L"Failed to register FileSelectorWindow class");
+            DWORD error = GetLastError();
+            Logger::logError(L"Failed to register FileSelectorWindow class. Error code: " + std::to_wstring(error));
             return;
         }
         classRegistered = true;
         Logger::logError(L"FileSelectorWindow class registered successfully");
     }
-}
-
-FileSelectorWindow::FileSelectorWindow(HINSTANCE hInstance, HWND parent, const std::wstring& directory)
-    : Window(), parent(parent), directory(directory), comboBox(nullptr) {
-    this->hInstance = hInstance;
 }
 
 void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
-    static bool classRegistered = false;
-    static int windowCount = 0; // Track number of windows for positioning
-    if (!classRegistered) {
-        WNDCLASSEXW wcex = { 0 };
-        wcex.cbSize = sizeof(WNDCLASSEX);
-        wcex.style = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc = Window::WndProc;
-        wcex.hInstance = hInstance;
-        wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        wcex.lpszClassName = L"FileSelectorWindowClass";
-        if (!RegisterClassExW(&wcex)) {
-            Logger::logError(L"Failed to register FileSelectorWindow class");
-            return;
-        }
-        classRegistered = true;
-        Logger::logError(L"FileSelectorWindow class registered successfully");
-    }
-
-    // Increment window count and offset position
+    static int windowCount = 0;
     windowCount++;
     int xPos = 100 + (windowCount - 1) * 20;
     int yPos = 100 + (windowCount - 1) * 20;
 
+    // Ensure class is registered
+    RegisterClass(hInstance);
+
     hwnd = CreateWindowW(L"FileSelectorWindowClass", L"Select XTurb Output File",
-        WS_OVERLAPPEDWINDOW, xPos, yPos, 415, 160, parent, nullptr, hInstance, this);
+        WS_OVERLAPPEDWINDOW, xPos, yPos, 415, 200, parent, nullptr, hInstance, this);
     if (!hwnd) {
-        Logger::logError(L"Failed to create FileSelectorWindow");
+        DWORD error = GetLastError();
+        Logger::logError(L"Failed to create FileSelectorWindow. Error code: " + std::to_wstring(error));
         return;
     }
 
@@ -72,6 +71,13 @@ void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
         150, 70, 100, 30, hwnd, (HMENU)1002, hInstance, nullptr);
     if (!selectButton) {
         Logger::logError(L"Failed to create select button in FileSelectorWindow");
+    }
+
+    // Create Save Output Files Button
+    HWND saveButton = CreateWindowW(L"BUTTON", L"Save Output Files", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        150, 110, 100, 30, hwnd, (HMENU)1003, hInstance, nullptr);
+    if (!saveButton) {
+        Logger::logError(L"Failed to create save output files button in FileSelectorWindow");
     }
 
     refreshFileList();
@@ -106,7 +112,7 @@ LRESULT FileSelectorWindow::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam
     switch (msg) {
     case WM_COMMAND:
         if (LOWORD(wParam) == 1002 && HIWORD(wParam) == BN_CLICKED) {
-            LRESULT index = SendMessageW(comboBox, CB_GETCURSEL, 0, 0); // Line ~91
+            LRESULT index = SendMessageW(comboBox, CB_GETCURSEL, 0, 0);
             if (index != CB_ERR && index >= 0 && index < files.size()) {
                 selectedFile = directory + L"\\" + files[index];
                 Logger::logError(L"Selected file: " + selectedFile);
@@ -114,6 +120,14 @@ LRESULT FileSelectorWindow::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam
             }
             else {
                 Logger::logError(L"No file selected");
+            }
+        }
+        else if (LOWORD(wParam) == 1003 && HIWORD(wParam) == BN_CLICKED) {
+            if (compressor && compressor->compressFiles()) {
+                Logger::logError(L"Successfully compressed output files");
+            }
+            else {
+                Logger::logError(L"Failed to compress output files");
             }
         }
         break;
