@@ -66,6 +66,18 @@ struct InputData {
 
     // &HVM section
     double AVISC;
+    int WAKEEXP;        
+    double DX0;         
+    double XSTR;        
+    double XTREFFTZ;    
+    int NSEC;           
+    int IB;            
+    int DIP;            
+    double OMRELAX;     
+    int NACMOD;         
+    double LN;         
+    double HN;          
+    double XN;        
 
     // &BEMT section
     int RLOSS;

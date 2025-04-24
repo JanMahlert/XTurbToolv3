@@ -1,11 +1,16 @@
+//Written by: Luke Spangler
+
 #include "Button.h"
 
-// Constructor: Initialize with parent, position, text, and ID
+//---------------------- Constructor ----------------------//
+
 Button::Button(HWND parent, HINSTANCE hInstance, int x, int y, int width, int height, const std::wstring& text, HMENU id)
     : Control(parent, hInstance, x, y, width, height, id), text(text) {
 }
 
-// Create the button control
+//---------------------- Member Functions ----------------------//
+
+//Creates a button when called
 void Button::create() {
     hControl = CreateWindowW(L"BUTTON", text.c_str(), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
         x, y, width, height, parentHwnd, controlId, hInstance, nullptr);
@@ -16,7 +21,7 @@ void Button::create() {
     }
 }
 
-// Set a custom font for the button
+//Sets the buttons font when called
 void Button::setFont(HFONT hFont) {
     if (hControl && hFont) {
         SendMessage(hControl, WM_SETFONT, (WPARAM)hFont, TRUE);

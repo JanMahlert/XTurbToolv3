@@ -8,8 +8,9 @@ InputData::InputData()
     STALLDELAY(0), VITERNA(0), NSWEEP(2), NDIHED(2), NTWAX(2), NPIAX(2), CHECK(0), DESIGN(0),
     NTSR(10), BTSR(2), ETSR(20), NPITCH(2), BPITCH(1.8), EPITCH(3.0), ANALYSIS(0), NANA(2),
     PREDICTION(1), BRADIUS(5.03), RHOAIR(1.225), MUAIR(1.8E-05), NPRE(1), METHOD(1), JX(41),
-    COSDISTR(1), GNUPLOT(2), AVISC(0.5), RLOSS(1), tipLoss(1), AXRELAX(0.125), ATRELAX(0.125),
-    OPTIM(0) {
+    COSDISTR(1), GNUPLOT(2), AVISC(0.5), WAKEEXP(1), DX0(1.E-04), XSTR(1.0), XTREFFTZ(1.0),
+    NSEC(20), IB(2), DIP(1), OMRELAX(0.2), NACMOD(0), LN(0.05), HN(0.025), XN(0.0),
+    RLOSS(1), tipLoss(1), AXRELAX(0.125), ATRELAX(0.125), OPTIM(0) {
     RTAPER = { 0.25, 1.00 };
     CTAPER = { 0.1465, 0.0707 };
     NTWIST = 20;
@@ -246,9 +247,20 @@ void InputData::writeToFile(const std::wstring& filename) const {
 
     // &HVM section
     file << "&HVM\r\n";
+    file << "  WAKEEXP    = " << WAKEEXP << ",\r\n";
+    file << "  DX0        = " << to_string(DX0) << ",\r\n";
+    file << "  XSTR       = " << to_string(XSTR) << ",\r\n";
+    file << "  XTREFFTZ   = " << to_string(XTREFFTZ) << ",\r\n";
+    file << "  NSEC       = " << NSEC << ",\r\n";
+    file << "  IB         = " << IB << ",\r\n";
+    file << "  DIP        = " << DIP << ",\r\n";
+    file << "  OMRELAX    = " << to_string(OMRELAX) << ",\r\n";
     file << "  AVISC      = " << to_string(AVISC) << ",\r\n";
+    file << "  NACMOD     = " << NACMOD << ",\r\n";
+    file << "  LN         = " << to_string(LN) << ",\r\n";
+    file << "  HN         = " << to_string(HN) << ",\r\n";
+    file << "  XN         = " << to_string(XN) << ",\r\n";
     file << "&END\r\n";
-
     // &BEMT section
     file << "&BEMT\r\n";
     file << "  RLOSS      = " << RLOSS << ",\r\n";

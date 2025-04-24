@@ -29,8 +29,8 @@ void GraphControl::draw(HDC hdc, RECT rect) {
     for (size_t i = 0; i < table.rows.size(); ++i) {
         const auto& row = table.rows[i];
         if (row.size() >= 2) {
-            double x = row[0]; // r/R
-            double y = row[1]; // e.g., Chord/R
+            double x = row[0];
+            double y = row[1];
             if (std::isnan(x) || std::isnan(y)) {
                 Logger::logError(L"Skipping point due to NaN: row " + std::to_wstring(i));
                 continue;
@@ -49,11 +49,12 @@ void GraphControl::draw(HDC hdc, RECT rect) {
 
     int graphWidth = rect.right - rect.left - 150;
     int graphHeight = rect.bottom - rect.top - 80;
-	int graphLeft = rect.left + 100; // Leave space for Y-axis labels and title
-	int graphTop = rect.top + 40; // Adjust top to leave space for X-axis labels and title
+    int graphLeft = rect.left + 100;
+    int graphTop = rect.top + 40;
     int graphBottom = graphTop + graphHeight;
     int graphRight = graphLeft + graphWidth;
 
+    // Draw axes
     HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
     MoveToEx(hdc, graphLeft, graphTop, nullptr);
@@ -76,6 +77,28 @@ void GraphControl::draw(HDC hdc, RECT rect) {
     double xScale = graphWidth / (maxX - minX);
     double yScale = graphHeight / (maxY - minY);
 
+    // Draw grid lines
+    HPEN hGridPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+    SelectObject(hdc, hGridPen);
+
+    const int numGridLines = 5;
+    double xStep = (maxX - minX) / numGridLines;
+    double yStep = (maxY - minY) / numGridLines;
+
+    for (int i = 0; i <= numGridLines; ++i) {
+        int x = graphLeft + (i * graphWidth) / numGridLines;
+        MoveToEx(hdc, x, graphTop, nullptr);
+        LineTo(hdc, x, graphBottom);
+
+        int y = graphBottom - (i * graphHeight) / numGridLines;
+        MoveToEx(hdc, graphLeft, y, nullptr);
+        LineTo(hdc, graphRight, y);
+    }
+
+    // Switch back to black pen for axes
+    SelectObject(hdc, hPen);
+
+    // Plot data
     HPEN hDataPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
     SelectObject(hdc, hDataPen);
     for (size_t i = 0; i < xData.size(); ++i) {
@@ -85,30 +108,34 @@ void GraphControl::draw(HDC hdc, RECT rect) {
         else LineTo(hdc, x, y);
     }
 
-    // Add min/max labels (mimicking TwistGraph/ChordGraph style)
+    // Draw grid labels
     wchar_t buffer[32];
-
-    // X-axis labels (r/R)
-    SetTextAlign(hdc, TA_LEFT);
-    swprintf(buffer, 32, L"%.2f", minX);
-    TextOutW(hdc, graphLeft, graphBottom + 5, buffer, wcslen(buffer));
-    swprintf(buffer, 32, L"%.2f", maxX);
-    TextOutW(hdc, graphRight - 30, graphBottom + 5, buffer, wcslen(buffer));
-
-    // Y-axis labels (e.g., Chord/R)
-    SetTextAlign(hdc, TA_RIGHT);
-    swprintf(buffer, 32, L"%.2f", maxY);
-    TextOutW(hdc, graphLeft - 5, graphTop, buffer, wcslen(buffer));
-    swprintf(buffer, 32, L"%.2f", minY);
-    TextOutW(hdc, graphLeft - 5, graphBottom - 15, buffer, wcslen(buffer));
-
-    // Axis titles (unchanged)
+    // X-axis labels
     SetTextAlign(hdc, TA_CENTER);
-    TextOutW(hdc, graphLeft + graphWidth / 2, graphBottom + 10, table.headers[0].c_str(), table.headers[0].length());
+    for (int i = 0; i <= numGridLines; ++i) {
+        int x = graphLeft + (i * graphWidth) / numGridLines;
+        double xValue = minX + (i * xStep);
+        swprintf(buffer, 32, L"%.2f", xValue);
+        TextOutW(hdc, x, graphBottom + 5, buffer, wcslen(buffer));
+    }
+
+    // Y-axis labels
+    SetTextAlign(hdc, TA_RIGHT);
+    for (int i = 0; i <= numGridLines; ++i) {
+        int y = graphBottom - (i * graphHeight) / numGridLines;
+        double yValue = minY + (i * yStep);
+        swprintf(buffer, 32, L"%.2f", yValue);
+        TextOutW(hdc, graphLeft - 15, y - 5, buffer, wcslen(buffer));
+    }
+
+    // Axis titles
+    SetTextAlign(hdc, TA_CENTER);
+    TextOutW(hdc, graphLeft + graphWidth / 2, graphBottom + 20, table.headers[0].c_str(), table.headers[0].length());
     SetTextAlign(hdc, TA_RIGHT);
     TextOutW(hdc, graphLeft - 20, graphTop - 35, table.headers[1].c_str(), table.headers[1].length());
 
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
+    DeleteObject(hGridPen);
     DeleteObject(hDataPen);
 }

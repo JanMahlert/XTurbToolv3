@@ -1,23 +1,33 @@
+//Written by: Jan Mahlert
+
 #include "BEMTOutputParser.h"
 #include <fstream>
 #include <sstream>
 #include "Logger.h"
 
+// ----------------------Constructor----------------------//
 BEMTOutputParser::BEMTOutputParser(const std::wstring& filePath)
     : OutputFileParser(filePath), inTableSection(false) {
 }
 
+// ----------------------Member Functions----------------------//
+
+// Process a single line of the output file
 bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
+
+	//Find the first non-whitespace character
     std::wstring trimmedLine = line;
     trimmedLine.erase(0, trimmedLine.find_first_not_of(L" \t"));
     trimmedLine.erase(trimmedLine.find_last_not_of(L" \t") + 1);
 
+	// Skip empty lines
     if (trimmedLine.empty()) {
         Logger::logError(L"Empty line skipped");
         data.headerText += line + L"\r\n"; // Add to header text
         return true;
     }
 
+	// Check for table header
     if (trimmedLine.find(L"---") != std::wstring::npos) {
         if (inTableSection && !currentTable.headers.empty() && !currentTable.rows.empty()) {
             data.tables.push_back(currentTable);
@@ -29,16 +39,23 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
         return true;
     }
 
+	// Check for table data
     if (inTableSection) {
         Logger::logError(L"Reached table section for line: " + trimmedLine);
+
+		// Skip lines that are not part of the table
         if (!currentTable.headers.empty()) {
             Logger::logError(L"Processing table row: " + trimmedLine);
             std::vector<double> row;
             size_t pos = 0, prev = 0;
             while ((pos = trimmedLine.find(L" ", prev)) != std::wstring::npos) {
                 std::wstring token = trimmedLine.substr(prev, pos - prev);
+
+				// Skip empty tokens
                 if (!token.empty()) {
                     Logger::logError(L"Token found: " + token);
+
+					// Handle special cases for Infinity or NaN
                     if (token == L"Infinity") {
                         row.push_back(std::numeric_limits<double>::infinity());
                     }
@@ -55,8 +72,12 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
                 prev = pos + 1;
             }
             std::wstring lastToken = trimmedLine.substr(prev);
+
+			// Handle the last token
             if (!lastToken.empty()) {
                 Logger::logError(L"Token found: " + lastToken);
+
+				// Handle special cases for Infinity or NaN
                 if (lastToken == L"Infinity") {
                     row.push_back(std::numeric_limits<double>::infinity());
                 }
@@ -71,6 +92,8 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
                 }
             }
             Logger::logError(L"Parsed " + std::to_wstring(row.size()) + L" values, expected " + std::to_wstring(currentTable.headers.size()));
+
+			// Check if the row size matches the header size
             if (!row.empty() && row.size() == currentTable.headers.size()) {
                 currentTable.rows.push_back(row);
                 Logger::logError(L"Data row added: " + trimmedLine);
@@ -90,6 +113,8 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
         std::wstringstream ss(trimmedLine);
         std::wstring firstToken;
         ss >> firstToken;
+
+		// Check for special cases
         if (firstToken == L"r/R" || firstToken == L"Number") {
             currentTable.headers.clear();
             std::wstringstream headerSS(trimmedLine);
@@ -98,6 +123,7 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
                 currentTable.headers.push_back(header);
             }
             Logger::logError(L"Table headers set: " + trimmedLine + L" (" + std::to_wstring(currentTable.headers.size()) + L" columns)");
+            
             // If this is the "r/R" table, stop adding to headerText
             if (firstToken != L"r/R") {
                 data.headerText += line + L"\r\n";
@@ -119,22 +145,30 @@ bool BEMTOutputParser::processLine(const std::wstring& line, OutputData& data) {
     return true;
 }
 
+// Parse the output file
 bool BEMTOutputParser::parse(OutputData& data) {
     std::wifstream file(filePath);
+
+	// Check if the file is open
     if (!file.is_open()) {
         Logger::logError(L"Failed to open file: " + filePath);
         return false;
     }
 
     std::wstring line;
+
+	// Read the file line by line
     while (std::getline(file, line)) {
         Logger::logError(L"Reading line: " + line);
+
+		// Process the line
         if (!processLine(line, data)) {
             file.close();
             return false;
         }
     }
 
+	// Finalize the last table if it exists
     if (inTableSection && !currentTable.headers.empty() && !currentTable.rows.empty()) {
         data.tables.push_back(currentTable);
         Logger::logError(L"Final table parsed with " + std::to_wstring(currentTable.rows.size()) + L" rows");

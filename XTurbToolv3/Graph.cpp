@@ -75,6 +75,7 @@ void TwistGraph::draw(HDC hdc, RECT rect) {
     int graphRight = graphLeft + graphWidth;
     int graphBottom = graphTop + graphHeight;
 
+    // Draw axes
     HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
     MoveToEx(hdc, graphLeft, graphTop, nullptr);
@@ -96,6 +97,30 @@ void TwistGraph::draw(HDC hdc, RECT rect) {
     double xScale = graphWidth / (maxR - minR);
     double yScale = graphHeight / (maxTwist - minTwist);
 
+    // Draw grid lines
+    HPEN hGridPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+    SelectObject(hdc, hGridPen);
+
+    const int numGridLines = 5;
+    double xStep = (maxR - minR) / numGridLines; // Data step size for X-axis
+    double yStep = (maxTwist - minTwist) / numGridLines; // Data step size for Y-axis
+
+    for (int i = 0; i <= numGridLines; ++i) { // Include 0 for min values
+        // Vertical grid lines (X-axis)
+        int x = graphLeft + (i * graphWidth) / numGridLines;
+        MoveToEx(hdc, x, graphTop, nullptr);
+        LineTo(hdc, x, graphBottom);
+
+        // Horizontal grid lines (Y-axis)
+        int y = graphBottom - (i * graphHeight) / numGridLines;
+        MoveToEx(hdc, graphLeft, y, nullptr);
+        LineTo(hdc, graphRight, y);
+    }
+
+    // Switch back to black pen for axes
+    SelectObject(hdc, hPen);
+
+    // Plot data
     HPEN hDataPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
     SelectObject(hdc, hDataPen);
 
@@ -107,26 +132,35 @@ void TwistGraph::draw(HDC hdc, RECT rect) {
         Ellipse(hdc, x - 3, y - 3, x + 3, y + 3);
     }
 
+    // Draw grid labels
+    wchar_t buffer[32];
+    // X-axis labels (below the graph)
+    SetTextAlign(hdc, TA_CENTER);
+    for (int i = 0; i <= numGridLines; ++i) {
+        int x = graphLeft + (i * graphWidth) / numGridLines;
+        double xValue = minR + (i * xStep);
+        swprintf(buffer, 32, L"%.2f", xValue);
+        TextOutW(hdc, x, graphBottom + 5, buffer, wcslen(buffer));
+    }
+
+    // Y-axis labels (to the left of the graph)
+    SetTextAlign(hdc, TA_RIGHT);
+    for (int i = 0; i <= numGridLines; ++i) {
+        int y = graphBottom - (i * graphHeight) / numGridLines;
+        double yValue = minTwist + (i * yStep);
+        swprintf(buffer, 32, L"%.2f", yValue);
+        TextOutW(hdc, graphLeft - 15, y - 5, buffer, wcslen(buffer)); // Offset slightly for readability
+    }
+
+    // Axis titles
     SetTextAlign(hdc, TA_CENTER);
     TextOutW(hdc, (graphLeft + graphRight) / 2, graphBottom + 20, L"Radial Position (r/R)", 21);
     SetTextAlign(hdc, TA_RIGHT);
     TextOutW(hdc, graphLeft - 15, graphTop - 20, L"Twist", 5);
 
-    SetTextAlign(hdc, TA_LEFT);
-    wchar_t buffer[32];
-    swprintf(buffer, 32, L"%.2f", minR);
-    TextOutW(hdc, graphLeft, graphBottom + 5, buffer, wcslen(buffer));
-    swprintf(buffer, 32, L"%.2f", maxR);
-    TextOutW(hdc, graphRight - 30, graphBottom + 5, buffer, wcslen(buffer));
-
-    SetTextAlign(hdc, TA_RIGHT);
-    swprintf(buffer, 32, L"%.2f", maxTwist);
-    TextOutW(hdc, graphLeft - 5, graphTop, buffer, wcslen(buffer));
-    swprintf(buffer, 32, L"%.2f", minTwist);
-    TextOutW(hdc, graphLeft - 5, graphBottom - 15, buffer, wcslen(buffer));
-
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
+    DeleteObject(hGridPen);
     DeleteObject(hDataPen);
 }
 
@@ -152,6 +186,7 @@ void ChordGraph::draw(HDC hdc, RECT rect) {
     int graphRight = graphLeft + graphWidth;
     int graphBottom = graphTop + graphHeight;
 
+    // Draw axes
     HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
     MoveToEx(hdc, graphLeft, graphTop, nullptr);
@@ -173,6 +208,28 @@ void ChordGraph::draw(HDC hdc, RECT rect) {
     double xScale = graphWidth / (maxR - minR);
     double yScale = graphHeight / (maxChord - minChord);
 
+    // Draw grid lines
+    HPEN hGridPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+    SelectObject(hdc, hGridPen);
+
+    const int numGridLines = 5;
+    double xStep = (maxR - minR) / numGridLines;
+    double yStep = (maxChord - minChord) / numGridLines;
+
+    for (int i = 0; i <= numGridLines; ++i) {
+        int x = graphLeft + (i * graphWidth) / numGridLines;
+        MoveToEx(hdc, x, graphTop, nullptr);
+        LineTo(hdc, x, graphBottom);
+
+        int y = graphBottom - (i * graphHeight) / numGridLines;
+        MoveToEx(hdc, graphLeft, y, nullptr);
+        LineTo(hdc, graphRight, y);
+    }
+
+    // Switch back to black pen for axes
+    SelectObject(hdc, hPen);
+
+    // Plot data
     HPEN hDataPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
     SelectObject(hdc, hDataPen);
 
@@ -184,25 +241,34 @@ void ChordGraph::draw(HDC hdc, RECT rect) {
         Ellipse(hdc, x - 3, y - 3, x + 3, y + 3);
     }
 
+    // Draw grid labels
+    wchar_t buffer[32];
+    // X-axis labels
+    SetTextAlign(hdc, TA_CENTER);
+    for (int i = 0; i <= numGridLines; ++i) {
+        int x = graphLeft + (i * graphWidth) / numGridLines;
+        double xValue = minR + (i * xStep);
+        swprintf(buffer, 32, L"%.2f", xValue);
+        TextOutW(hdc, x, graphBottom + 5, buffer, wcslen(buffer));
+    }
+
+    // Y-axis labels
+    SetTextAlign(hdc, TA_RIGHT);
+    for (int i = 0; i <= numGridLines; ++i) {
+        int y = graphBottom - (i * graphHeight) / numGridLines;
+        double yValue = minChord + (i * yStep);
+        swprintf(buffer, 32, L"%.2f", yValue);
+        TextOutW(hdc, graphLeft - 15, y - 5, buffer, wcslen(buffer));
+    }
+
+    // Axis titles
     SetTextAlign(hdc, TA_CENTER);
     TextOutW(hdc, (graphLeft + graphRight) / 2, graphBottom + 20, L"Radial Position (r/R)", 21);
     SetTextAlign(hdc, TA_RIGHT);
     TextOutW(hdc, graphLeft - 15, graphTop - 20, L"Chord", 5);
 
-    SetTextAlign(hdc, TA_LEFT);
-    wchar_t buffer[32];
-    swprintf(buffer, 32, L"%.2f", minR);
-    TextOutW(hdc, graphLeft, graphBottom + 5, buffer, wcslen(buffer));
-    swprintf(buffer, 32, L"%.2f", maxR);
-    TextOutW(hdc, graphRight - 30, graphBottom + 5, buffer, wcslen(buffer));
-
-    SetTextAlign(hdc, TA_RIGHT);
-    swprintf(buffer, 32, L"%.2f", maxChord);
-    TextOutW(hdc, graphLeft - 5, graphTop, buffer, wcslen(buffer));
-    swprintf(buffer, 32, L"%.2f", minChord);
-    TextOutW(hdc, graphLeft - 5, graphBottom - 15, buffer, wcslen(buffer));
-
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
+    DeleteObject(hGridPen);
     DeleteObject(hDataPen);
 }
