@@ -32,6 +32,7 @@ Container::Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, 
     this->hInstance = hInstance;
     this->hwnd = parent;
 
+    //Get the directory path of the currently running executable and store it in exeDir
     wchar_t exePath[MAX_PATH];
     if (GetModuleFileNameW(nullptr, exePath, MAX_PATH) > 0) {
         std::wstring fullPath = exePath;
@@ -52,6 +53,7 @@ Container::Container(HWND parent, HINSTANCE hInstance, int x, int y, int width, 
 
 // Destructor: Clean up resources
 Container::~Container() {
+    //Deletes the font object and clears the pointer to avoid memory issues.
     if (hFontRegular) {
         DeleteObject(hFontRegular);
         hFontRegular = nullptr;
@@ -100,6 +102,7 @@ void Container::addLabeledInput(const std::wstring& labelText, InputField*& inpu
     int labelY = currentY;
     Label* label = new Label(hwnd, hInstance, 0, labelY - scrollPos, labelWidth, height, labelText);
     label->create();
+    //Adds label to controls if valid; otherwise logs an error and deletes the label.
     if (label->getHandle()) {
         controls.push_back(label);
         if (hFontRegular) {
@@ -111,6 +114,7 @@ void Container::addLabeledInput(const std::wstring& labelText, InputField*& inpu
         delete label;
     }
 
+    //Creates an InputField, adds it to controls if valid, or logs an error and cleans up on failure.
     inputField = new InputField(hwnd, hInstance, labelWidth + 10, labelY - scrollPos, inputWidth, height, generateControlId());
     inputField->create();
     if (inputField->getHandle()) {
@@ -943,36 +947,36 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     const int standardInputHeight = 20;
 
     // Header label
-    Label* headerLabel = new Label(hwnd, hInstance, 0, currentY - scrollPos, 300, 20, L"Blade Parameters (Geometric Definitions)");
+    Label* headerLabel = new Label(hwnd, hInstance, 0, currentY - scrollPos, 150, 20, L"Blade Parameters");
     addControl(headerLabel, 150, 20);
     if (hFontBold) {
         headerLabel->setFont(hFontBold);
     }
 
     // &BLADE section fields (using standard dimensions)
-    addLabeledInput(L"Design Name:", nameInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Blade Name:", nameInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     nameInput->setDefaultText(L"NREL-PhaseVI");
     addLabeledInput(L"Number of Blades:", bnInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     bnInput->setDefaultText(L"2");
     addLabeledInput(L"Root Radius:", rootInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rootInput->setDefaultText(L"0.25");
-    addLabeledInput(L"Number of Chord Definitions:", ntaperInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Taper Points:", ntaperInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ntaperInput->setDefaultText(L"2");
-    addLabeledInput(L"Radial Location / Radius:", rtaperInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Taper Points:", rtaperInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rtaperInput->setDefaultText(L"0.25,1.00");
-    addLabeledInput(L"Blade Chord / Radius:", ctaperInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Chord Taper Points:", ctaperInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ctaperInput->setDefaultText(L"0.1465,0.0707");
-    addLabeledInput(L"Number of Twist Definitions:", ntwistInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Twist Points:", ntwistInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ntwistInput->setDefaultText(L"20");
-    addLabeledInput(L"Radial Location / Radius:", rtwistInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Twist Points:", rtwistInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rtwistInput->setDefaultText(L"0.250,0.267,0.300,0.328,0.388,0.449,0.466,0.509,0.570,0.631,0.633,0.691,0.752,0.800,0.812,0.873,0.934,0.950,0.994,1.000");
     addLabeledInput(L"Twist Angles (deg):", dtwistInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     dtwistInput->setDefaultText(L"20.040,18.074,14.292,11.909,7.979,5.308,4.715,3.425,2.083,1.150,1.115,0.494,-0.015,-0.381,-0.475,-0.920,-1.352,-1.469,-1.775,-1.816");
     addLabeledInput(L"Number of Airfoil Data Sets:", nairfInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     nairfInput->setDefaultText(L"1");
-    addLabeledInput(L"Radial Starting Loc. of Airfoil(s):", rairfInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Airfoil Points:", rairfInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rairfInput->setDefaultText(L"0.25");
-    addLabeledInput(L"Path to XFOIL Polar of Airfoil(s):", airfdataInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Airfoil Data Files:", airfdataInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     airfdataInput->setDefaultText(L"./s80905.polar");
     addLabeledInput(L"Blend Airfoil Data (0/1):", blendairfInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     blendairfInput->setDefaultText(L"0");
@@ -980,31 +984,31 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     percentrInput->setDefaultText(L"2");
     addLabeledInput(L"Stall Delay Model (0-2):", stalldelayInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     stalldelayInput->setDefaultText(L"0");
-    addLabeledInput(L"Viterna Extrapolation (0/1):", viternaInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Viterna Correction (0/1):", viternaInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     viternaInput->setDefaultText(L"0");
-    addLabeledInput(L"Number of Sweep Definitions:", nsweepInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Sweep Points:", nsweepInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     nsweepInput->setDefaultText(L"2");
-    addLabeledInput(L"Radial Location / Radius:", rsweepInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Sweep Points:", rsweepInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rsweepInput->setDefaultText(L"0.25,1.00");
-    addLabeledInput(L"Blade Sweep / Radius:", lsweepInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Sweep Lengths:", lsweepInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     lsweepInput->setDefaultText(L"0.00,0.00");
-    addLabeledInput(L"Number of Dihedral Definitions:", ndihedInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Dihedral Points:", ndihedInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ndihedInput->setDefaultText(L"2");
-    addLabeledInput(L"Radial Location / Radius:", rdihedInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Dihedral Points:", rdihedInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rdihedInput->setDefaultText(L"0.25,1.00");
-    addLabeledInput(L"Blade Dihedral / Radius:", ldihedInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Dihedral Lengths:", ldihedInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ldihedInput->setDefaultText(L"0.00,0.00");
-    addLabeledInput(L"Number of Twist Axis Definitions:", ntwaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Twist Axis Points:", ntwaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ntwaxInput->setDefaultText(L"2");
-    addLabeledInput(L"Radial Location / Radius:", rtwaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Twist Axis Points:", rtwaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rtwaxInput->setDefaultText(L"0.25,1.00");
-    addLabeledInput(L"Twist Axis / Chord:", ltwaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Twist Axis Locations:", ltwaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ltwaxInput->setDefaultText(L"0.30,0.30");
-    addLabeledInput(L"Number of Pitch Axis Definitions:", npiaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Pitch Axis Points:", npiaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     npiaxInput->setDefaultText(L"2");
-    addLabeledInput(L"Radial Location / Radius:", rpiaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Radial Pitch Axis Points:", rpiaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rpiaxInput->setDefaultText(L"0.25,1.00");
-    addLabeledInput(L"Pitch Axis / Chord:", lpiaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Pitch Axis Locations:", lpiaxInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     lpiaxInput->setDefaultText(L"0.30,0.30");
 
     // Add graphs for Twist and Chord distributions
@@ -1014,7 +1018,7 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
         twistGraphLabel->setFont(hFontBold);
     }
 
-    twistGraph = new TwistGraph(hwnd, hInstance, standardInputWidth+standardLabelWidth+50, 30 - scrollPos, 350, 250, rtwistInput, dtwistInput);
+    twistGraph = new TwistGraph(hwnd, hInstance, standardInputWidth + standardLabelWidth + 50, 30 - scrollPos, 350, 250, rtwistInput, dtwistInput);
     twistGraph->create();
     currentY += 200 + SPACING;
     totalHeight = currentY;
@@ -1032,7 +1036,7 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
 
     currentY += -450;
     // &OPERATION section header
-    Label* operationHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 300, 20, L"Operation Parameters (Design, Analysis, Prediction)");
+    Label* operationHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 150, 20, L"Operation Parameters");
     addControl(operationHeader, 150, 20);
     if (hFontBold) {
         operationHeader->setFont(hFontBold);
@@ -1042,17 +1046,17 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     checkInput->setDefaultText(L"0");
     addLabeledInput(L"Design Mode (0/1):", designInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     designInput->setDefaultText(L"0");
-    addLabeledInput(L"Number of Tip Speed Ratios:", ntsrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of TSR for Design:", ntsrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     ntsrInput->setDefaultText(L"10");
-    addLabeledInput(L"Minimum Tip Speed Ratio:", btsrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Beginning TSR:", btsrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     btsrInput->setDefaultText(L"2");
-    addLabeledInput(L"Maximum Tip Speed Ratio:", etsrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Ending TSR:", etsrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     etsrInput->setDefaultText(L"20");
-    addLabeledInput(L"Number of Blade Pitch Angles:", npitchInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Number of Pitch Angles:", npitchInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     npitchInput->setDefaultText(L"2");
-    addLabeledInput(L"Minimum Pitch Angle:", bpitchInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Beginning Pitch Angle:", bpitchInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     bpitchInput->setDefaultText(L"1.8");
-    addLabeledInput(L"Maximum Pitch Angle:", epitchInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Ending Pitch Angle:", epitchInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     epitchInput->setDefaultText(L"3.0");
     addLabeledInput(L"Analysis Mode (0/1):", analysisInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     analysisInput->setDefaultText(L"0");
@@ -1064,11 +1068,11 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     pitchanaInput->setDefaultText(L"3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0");
     addLabeledInput(L"Prediction Mode (0/1):", predictionInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     predictionInput->setDefaultText(L"1");
-    addLabeledInput(L"Blade Radius (m):", bradiusInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Blade Radius:", bradiusInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     bradiusInput->setDefaultText(L"5.03");
-    addLabeledInput(L"Air Density (kg/m^3):", rhoairInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Air Density:", rhoairInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rhoairInput->setDefaultText(L"1.225");
-    addLabeledInput(L"Air Dynamic Viscosity [kg/(ms)]:", muairInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Air Viscosity:", muairInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     muairInput->setDefaultText(L"1.8E-05");
     addLabeledInput(L"Number of Prediction Cases:", npreInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     npreInput->setDefaultText(L"1");
@@ -1076,11 +1080,11 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     vwindInput->setDefaultText(L"7.0,7.0,9.0,10.0,11.0,13.0");
     addLabeledInput(L"RPM Values:", rpmpresInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     rpmpresInput->setDefaultText(L"72.0,72.0,72.0,72.0,72.0,72.0");
-    addLabeledInput(L"Blade Pitch Angles (deg):", pitchpreInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Pitch Prediction Values:", pitchpreInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     pitchpreInput->setDefaultText(L"3.0,3.0,3.0,3.0,3.0,3.0");
 
     // &SOLVER section header
-    Label* solverHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 300, 20, L"Solver Parameters (Solver and Grid Selection)");
+    Label* solverHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 150, 20, L"Solver Parameters");
     addControl(solverHeader, 150, 20);
     if (hFontBold) {
         solverHeader->setFont(hFontBold);
@@ -1093,46 +1097,22 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     jxInput->setDefaultText(L"41");
     addLabeledInput(L"Cosine Distribution (0/1):", cosdistrInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     cosdistrInput->setDefaultText(L"1");
-    addLabeledInput(L"Gnuplot Output Files (0-2):", gnuplotInput, standardLabelWidth, standardInputWidth, standardInputHeight);
+    addLabeledInput(L"Gnuplot Output (0-2):", gnuplotInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     gnuplotInput->setDefaultText(L"2");
 
     // &HVM section header
-    Label* hvmHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 300, 20, L"Helicoidal Vortex Method (NO NEED TO CHANGE)");
+    Label* hvmHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 150, 20, L"HVM Parameters");
     addControl(hvmHeader, 150, 20);
     if (hFontBold) {
         hvmHeader->setFont(hFontBold);
     }
 
     // &HVM section fields (using standard dimensions)
-    addLabeledInput(L"Wake Expansion (0/1):", wakeexpInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    wakeexpInput->setDefaultText(L"1");
-    addLabeledInput(L"Initial Mesh Step dx0:", DX0Input, standardLabelWidth, standardInputWidth, standardInputHeight);
-    DX0Input->setDefaultText(L"1.E-04");
-    addLabeledInput(L"End Mesh Stretching:", XSTRInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    XSTRInput->setDefaultText(L"1.0");
-    addLabeledInput(L"Location of Trefftz Plane:", XTREFFTZInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    XTREFFTZInput->setDefaultText(L"1.0");
-    addLabeledInput(L"Number of Sectors:", NSECInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    NSECInput->setDefaultText(L"20");
-    addLabeledInput(L"Number of Segments:", ibInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    ibInput->setDefaultText(L"2");
-    addLabeledInput(L"Interval for Boundary Nodes:", DIPInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    DIPInput->setDefaultText(L"1");
-    addLabeledInput(L"Omega Relaxation Factor:", OMRELAXInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    OMRELAXInput->setDefaultText(L"0.2");
     addLabeledInput(L"Artificial Viscosity:", aviscInput, standardLabelWidth, standardInputWidth, standardInputHeight);
     aviscInput->setDefaultText(L"0.5");
-    addLabeledInput(L"Nacelle Mode (0/1):", NACMODInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    NACMODInput->setDefaultText(L"0");
-    addLabeledInput(L"Nacelle 1/2 Length:", LNInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    LNInput->setDefaultText(L"0.05");
-    addLabeledInput(L"Nacelle 1/2 Height:", HNInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    HNInput->setDefaultText(L"0.025");
-    addLabeledInput(L"Axial Location of NAC Midpoint:", XNInput, standardLabelWidth, standardInputWidth, standardInputHeight);
-    XNInput->setDefaultText(L"0.0");
 
     // &BEMT section header
-    Label* bemtHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 350, 20, L"BEMT Parameters (Blade Element Momentum Theory)");
+    Label* bemtHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 150, 20, L"BEMT Parameters");
     addControl(bemtHeader, 150, 20);
     if (hFontBold) {
         bemtHeader->setFont(hFontBold);
@@ -1149,7 +1129,7 @@ void Container::create(HINSTANCE hInstance, int nCmdShow) {
     atrelaxInput->setDefaultText(L"0.125");
 
     // &OPTI section header
-    Label* optiHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 350, 20, L"Inverse Design and Optimization Parameters");
+    Label* optiHeader = new Label(hwnd, hInstance, 0, currentY - scrollPos, 150, 20, L"Inverse Design Parameters");
     addControl(optiHeader, 150, 20);
     if (hFontBold) {
         optiHeader->setFont(hFontBold);
@@ -1260,6 +1240,8 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         updateScrollRange();
         return 0;
     }
+
+                //Handle custom message: re-enable Run button and show result of XTurb execution, launching new FileSelectorWindow if successful
     case WM_USER + 101: {
         Logger::logError(L"WM_USER + 101 received with wParam=" + std::to_wstring(wParam));
         HWND runButton = (HWND)lParam;
@@ -1286,6 +1268,8 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         return 0;
     }
+
+                      // Handle file selection: parse selected file and open a new DataDisplayWindow to display its contents
     case WM_USER + 102: { // File selected
         FileSelectorWindow* selector = reinterpret_cast<FileSelectorWindow*>(lParam);
         std::wstring filePath = selector->getSelectedFile();
@@ -1380,23 +1364,12 @@ LRESULT Container::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
             if (cosdistrInput) inputData.COSDISTR = _wtoi(cosdistrInput->getText().c_str());
             if (gnuplotInput) inputData.GNUPLOT = _wtoi(gnuplotInput->getText().c_str());
             if (aviscInput) inputData.AVISC = _wtof(aviscInput->getText().c_str());
-            if (wakeexpInput) inputData.WAKEEXP = _wtoi(wakeexpInput->getText().c_str());      
-            if (DX0Input) inputData.DX0 = _wtof(DX0Input->getText().c_str());                   
-            if (XSTRInput) inputData.XSTR = _wtof(XSTRInput->getText().c_str());              
-            if (XTREFFTZInput) inputData.XTREFFTZ = _wtof(XTREFFTZInput->getText().c_str());   
-            if (NSECInput) inputData.NSEC = _wtoi(NSECInput->getText().c_str());               
-            if (ibInput) inputData.IB = _wtoi(ibInput->getText().c_str());                   
-            if (DIPInput) inputData.DIP = _wtoi(DIPInput->getText().c_str());                 
-            if (OMRELAXInput) inputData.OMRELAX = _wtof(OMRELAXInput->getText().c_str());     
-            if (NACMODInput) inputData.NACMOD = _wtoi(NACMODInput->getText().c_str());        
-            if (LNInput) inputData.LN = _wtof(LNInput->getText().c_str());               
-            if (HNInput) inputData.HN = _wtof(HNInput->getText().c_str());                  
-            if (XNInput) inputData.XN = _wtof(XNInput->getText().c_str());                     
             if (rlossInput) inputData.RLOSS = _wtoi(rlossInput->getText().c_str());
             if (tiplossInput) inputData.tipLoss = _wtoi(tiplossInput->getText().c_str());
             if (axrelaxInput) inputData.AXRELAX = _wtof(axrelaxInput->getText().c_str());
             if (atrelaxInput) inputData.ATRELAX = _wtof(atrelaxInput->getText().c_str());
             if (optimInput) inputData.OPTIM = _wtoi(optimInput->getText().c_str());
+
             // Write to file in the same directory as XTurbTool.exe
             std::wstring inputFilePath = exeDir + L"output.inp";
             Logger::logError(L"Saving to: " + inputFilePath); // Add logging for debugging

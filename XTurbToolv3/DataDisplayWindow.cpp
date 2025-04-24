@@ -8,6 +8,7 @@
 
 bool DataDisplayWindow::classRegistered = false;
 
+// Register the window class for DataDisplayWindow if not already registered
 void DataDisplayWindow::RegisterClass(HINSTANCE hInstance) {
     if (!classRegistered) {
         WNDCLASSEXW wcex = { 0 };
@@ -17,6 +18,7 @@ void DataDisplayWindow::RegisterClass(HINSTANCE hInstance) {
         wcex.hInstance = hInstance;
         wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
         wcex.lpszClassName = L"DataDisplayWindowClass";
+        // If window class registration fails, log the error and exit the function
         if (!RegisterClassExW(&wcex)) {
             Logger::logError(L"Failed to register DataDisplayWindow class");
             return;
@@ -26,12 +28,14 @@ void DataDisplayWindow::RegisterClass(HINSTANCE hInstance) {
     }
 }
 
+// Constructor: initialize DataDisplayWindow with parsed data, parent window, and file info, then log table count
 DataDisplayWindow::DataDisplayWindow(HINSTANCE hInstance, HWND parent, const OutputData& data, const std::wstring& filePath)
     : Window(), parent(parent), data(data), fileName(filePath) {
     this->hInstance = hInstance;
     Logger::logError(L"DataDisplayWindow constructed with " + std::to_wstring(data.tables.size()) + L" tables");
 }
 
+// Destructor: delete all dynamically allocated graphs and controls, then clear the containers
 DataDisplayWindow::~DataDisplayWindow() {
     for (auto graph : graphs) delete graph;
     for (auto control : controls) delete control;
@@ -75,6 +79,8 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     HWND textBox = CreateWindowW(L"EDIT", headerText.c_str(),
         WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY | WS_BORDER,
         10, y, textFieldWidth, textFieldHeight, hwnd, (HMENU)1001, hInstance, nullptr);
+
+    // If textBox is created, apply a fixed-width font and add a new input field control to the window layout
     if (!textBox) {
         Logger::logError(L"Failed to create header text box");
     }
@@ -90,24 +96,30 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
         y += textFieldHeight + spacing;
     }
 
+    // Log how many tables will be used to create graphs
     Logger::logError(L"Creating graphs for " + std::to_wstring(data.tables.size()) + L" tables");
     for (const auto& table : data.tables) {
+        // Skip tables that don't have at least 2 columns (X and Y axes)
         if (table.headers.size() < 2) {
             Logger::logError(L"Table has fewer than 2 columns, skipping graphs");
             continue;
         }
-
+        // For each column beyond the first, create a graph of column[0] vs column[n]
         for (size_t col = 1; col < table.headers.size(); ++col) {
+            // Build a new table containing only the two relevant columns
             OutputData::Table graphTable;
             graphTable.headers = { table.headers[0], table.headers[col] };
+            // Populate rows for the graph with corresponding column data
             for (const auto& row : table.rows) {
                 if (row.size() > col) {
                     graphTable.rows.push_back({ row[0], row[col] });
                 }
             }
 
+            // Create a GraphControl using the two-column table
             GraphControl* graph = new GraphControl(hwnd, hInstance, 10, y, 700, 400, graphTable);
             graphs.push_back(graph);
+            // Retrieve the handle to the graph window
             HWND graphHwnd = graph->getHandle();
             if (graphHwnd) {
                 Logger::logError(L"GraphControl created at y=" + std::to_wstring(y) + L" with hwnd " + std::to_wstring(reinterpret_cast<LONG_PTR>(graphHwnd)));
@@ -117,10 +129,12 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
             else {
                 Logger::logError(L"GraphControl creation failed at y=" + std::to_wstring(y));
             }
+            // Increment y position for the next graph to avoid overlap
             y += 410;
         }
     }
 
+    // Set up a vertical scrollbar for the window and make the window visible, updating it to reflect changes
     SCROLLINFO si = { 0 };
     si.cbSize = sizeof(SCROLLINFO);
     si.fMask = SIF_RANGE | SIF_PAGE;
@@ -133,6 +147,7 @@ void DataDisplayWindow::create(HINSTANCE hInstance, int nCmdShow) {
     UpdateWindow(hwnd);
 }
 
+// Handle vertical scroll events, window close, and forward unhandled messages to the base class
 LRESULT DataDisplayWindow::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_VSCROLL: {

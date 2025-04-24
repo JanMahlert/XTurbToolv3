@@ -10,6 +10,7 @@ void Label::create() {
     hControl = CreateWindowW(L"STATIC", text.c_str(), WS_VISIBLE | WS_CHILD,
         x, y, width, height, parentHwnd, controlId, hInstance, nullptr);
 
+    // Logs an error and exits the function if the control handle is invalid (creation failed).
     if (!hControl) {
         Logger::logError(L"Failed to create label!");
         return;
@@ -18,6 +19,7 @@ void Label::create() {
 
 // Set a custom font for the label
 void Label::setFont(HFONT hFont) {
+    // Sets the font of the control if both the control handle and font handle are valid.
     if (hControl && hFont) {
         SendMessage(hControl, WM_SETFONT, (WPARAM)hFont, TRUE);
     }

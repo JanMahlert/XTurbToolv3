@@ -75,7 +75,7 @@ void FileSelectorWindow::create(HINSTANCE hInstance, int nCmdShow) {
 
     // Create Save Output Files Button
     HWND saveButton = CreateWindowW(L"BUTTON", L"Save Output Files", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        150, 110, 100, 30, hwnd, (HMENU)1003, hInstance, nullptr);
+        140, 110, 120, 30, hwnd, (HMENU)1003, hInstance, nullptr);
     if (!saveButton) {
         Logger::logError(L"Failed to create save output files button in FileSelectorWindow");
     }

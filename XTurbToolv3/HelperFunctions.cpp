@@ -5,6 +5,7 @@
 std::string wstring_to_string(const std::wstring& wstr) {
     if (wstr.empty()) return "";
 
+    // Converts a wide-character string (UTF-16) to a UTF-8 encoded std::string.
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
     std::string result(size_needed - 1, 0);  // -1 to exclude null terminator
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], size_needed, nullptr, nullptr);
@@ -23,6 +24,7 @@ std::vector<double> parseCommaSeparatedDoubles(const std::wstring& text) {
     std::vector<double> values;
     std::wstring wstr = text;
     size_t pos = 0;
+    // Splits a wide-character string by commas and converts each token to a double, storing the result in a vector.
     while ((pos = wstr.find(L',')) != std::wstring::npos) {
         std::wstring token = wstr.substr(0, pos);
         values.push_back(_wtof(token.c_str()));
@@ -39,6 +41,7 @@ std::vector<std::wstring> parseCommaSeparatedWStrings(const std::wstring& text) 
     std::vector<std::wstring> values;
     std::wstring wstr = text;
     size_t pos = 0;
+    // Splits a wide-character string by commas and stores each token as a substring in a vector.
     while ((pos = wstr.find(L',')) != std::wstring::npos) {
         std::wstring token = wstr.substr(0, pos);
         values.push_back(token);

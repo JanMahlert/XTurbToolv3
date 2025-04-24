@@ -10,6 +10,7 @@ void InputField::create() {
     hControl = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_AUTOHSCROLL,
         x, y, width, height, parentHwnd, controlId, hInstance, nullptr);
 
+    // Checks if the control handle is valid and logs an error if the creation failed.
     if (!hControl) {
         Logger::logError(L"Failed to create input field!");
         return;
@@ -18,6 +19,7 @@ void InputField::create() {
 
 // Set a custom font for the input field
 void InputField::setFont(HFONT hFont) {
+    // Sets the font of the control to hFont if both the control and font handles are valid.
     if (hControl && hFont) {
         SendMessage(hControl, WM_SETFONT, (WPARAM)hFont, TRUE);
     }
@@ -25,6 +27,7 @@ void InputField::setFont(HFONT hFont) {
 
 // Set default text in the input field
 void InputField::setDefaultText(const std::wstring& text) {
+    // Sets the text of the control to text if the control handle is valid.
     if (hControl) {
         SetWindowTextW(hControl, text.c_str());
     }
